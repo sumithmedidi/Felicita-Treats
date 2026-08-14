@@ -3777,3 +3777,14 @@ footer p {
     }
 
 }
+.powerhouse {
+  text-align: center;
+  margin: 0 auto 10px;
+  position: relative;
+  top: 100px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f1815;
+  line-height: 1;
+}
