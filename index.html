@@ -256,6 +256,24 @@
 
         </nav>
 
+        <button
+            class="cart-trigger"
+            id="cartTrigger"
+            type="button"
+            aria-label="Open cart"
+            aria-controls="cartPanel"
+            aria-expanded="false"
+        >
+            <span class="cart-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="20" r="1.2"></circle>
+                    <circle cx="18" cy="20" r="1.2"></circle>
+                    <path d="M3 4h2l2.1 10.1a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L20.5 8H6"></path>
+                </svg>
+            </span>
+            <span class="cart-count" id="cartCount">0</span>
+        </button>
+
     </header>
 
 
@@ -2307,9 +2325,45 @@
                             ↗
                         </div>
 
-                    
+                    </a>
 
-                
+
+
+                    <a
+                        href="tel:+919515372424"
+                        class="contact-card"
+                    >
+
+                        <div class="contact-card-icon">
+
+                            <img
+                                src="images/call.png"
+                                alt="Phone"
+                            >
+
+                        </div>
+
+
+                        <div class="contact-card-content">
+
+                            <span>
+                                CALL US
+                            </span>
+
+                            <strong>
+                                +91 9515372424
+                            </strong>
+
+                            <small>
+                                We'd be happy to help
+                            </small>
+
+                        </div>
+
+
+                        <div class="contact-arrow">
+                            ↗
+                        </div>
 
                     </a>
 
@@ -2344,6 +2398,138 @@
 
     </main>
 
+
+
+    <!-- =====================================================
+         MOBILE BOTTOM NAVIGATION
+         ===================================================== -->
+
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Mobile navigation">
+
+        <a href="#home" class="mobile-nav-item active" data-nav-target="home">
+            <span class="mobile-nav-icon" aria-hidden="true">⌂</span>
+            <span>Home</span>
+        </a>
+
+        <a href="#shop" class="mobile-nav-item" data-nav-target="shop">
+            <span class="mobile-nav-icon" aria-hidden="true">♨</span>
+            <span>Menu</span>
+        </a>
+
+        <a href="#about" class="mobile-nav-item" data-nav-target="about">
+            <span class="mobile-nav-icon" aria-hidden="true">ⓘ</span>
+            <span>About</span>
+        </a>
+
+        <a href="#contact" class="mobile-nav-item" data-nav-target="contact">
+            <span class="mobile-nav-icon" aria-hidden="true">☎</span>
+            <span>Contact</span>
+        </a>
+
+    </nav>
+
+
+    <!-- =====================================================
+         CART OVERLAY
+         ===================================================== -->
+
+    <div class="cart-backdrop" id="cartBackdrop" aria-hidden="true"></div>
+
+    <aside class="cart-panel" id="cartPanel" aria-label="Shopping cart" aria-hidden="true">
+        <div class="cart-panel-head">
+            <div>
+                <p class="cart-eyebrow">FELICITA TREATS</p>
+                <h2>Your Cart</h2>
+                <span id="cartItemLabel">0 items</span>
+            </div>
+            <button type="button" class="cart-close" id="cartClose" aria-label="Close cart">×</button>
+        </div>
+
+        <div class="cart-items" id="cartItems"></div>
+
+        <div class="cart-empty" id="cartEmpty">
+            <div class="cart-empty-icon">🛒</div>
+            <h3>Your cart is empty</h3>
+            <p>Add something sweet from the menu and it will appear here.</p>
+            <a href="#shop" class="primary-btn cart-shop-link">Explore the menu</a>
+        </div>
+
+        <div class="cart-summary" id="cartSummary">
+            <div><span>Subtotal</span><strong id="cartSubtotal">₹0</strong></div>
+            <div><span>Delivery</span><strong>To be confirmed</strong></div>
+            <div class="cart-total"><span>Total</span><strong id="cartTotal">₹0</strong></div>
+            <button type="button" class="cart-checkout-btn" id="cartCheckoutBtn">Continue to Order</button>
+        </div>
+    </aside>
+
+
+    <!-- =====================================================
+         PRODUCT OPTION MODAL
+         ===================================================== -->
+
+    <div class="product-modal-backdrop" id="productModalBackdrop" aria-hidden="true"></div>
+
+    <section class="product-modal" id="productModal" aria-hidden="true" aria-label="Choose product option">
+        <button type="button" class="product-modal-close" id="productModalClose" aria-label="Close">×</button>
+        <p class="cart-eyebrow">CHOOSE YOUR SIZE</p>
+        <h2 id="modalProductName">Cake</h2>
+        <p id="modalProductDescription"></p>
+        <div class="modal-options" id="modalOptions"></div>
+    </section>
+
+
+    <!-- =====================================================
+         CHECKOUT MODAL
+         ===================================================== -->
+
+    <div class="checkout-backdrop" id="checkoutBackdrop" aria-hidden="true"></div>
+
+    <section class="checkout-panel" id="checkoutPanel" aria-hidden="true" aria-label="Order details">
+        <button type="button" class="checkout-close" id="checkoutClose" aria-label="Close">×</button>
+        <p class="cart-eyebrow">ALMOST THERE</p>
+        <h2>Your Order</h2>
+        <div class="checkout-order" id="checkoutOrder"></div>
+
+        <div class="customer-form">
+            <label>
+                <span>Full Name</span>
+                <input id="customerName" type="text" autocomplete="name" placeholder="Enter your name">
+            </label>
+            <label>
+                <span>Phone Number</span>
+                <input id="customerPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="Enter your phone number">
+            </label>
+        </div>
+
+        <div class="checkout-total">
+            <span>Total</span>
+            <strong id="checkoutTotal">₹0</strong>
+        </div>
+
+        <button type="button" class="cart-checkout-btn" id="placeOrderBtn">Place Order</button>
+        <p class="checkout-note">Your order is saved and ready. After opening Instagram, send the Order ID shown below. Our Instagram API will automatically recognize it and reply with your order details.</p>
+    </section>
+
+
+    <!-- =====================================================
+         ORDER SUCCESS
+         ===================================================== -->
+
+    <div class="order-success-backdrop" id="orderSuccessBackdrop" aria-hidden="true"></div>
+
+    <section class="order-success-panel" id="orderSuccessPanel" aria-hidden="true" aria-label="Order prepared">
+        <div class="order-success-icon" aria-hidden="true">✓</div>
+        <p class="cart-eyebrow">ORDER PREPARED</p>
+        <h2>Thank you!</h2>
+        <p class="order-success-message">Your order details are ready to send to Felicita Treats.</p>
+        <div class="order-success-id" id="successOrderId"></div>
+        <div class="order-success-actions">
+            <button type="button" class="cart-checkout-btn" id="instagramOrderBtn">Open Instagram & Send Order ID</button>
+            <button type="button" class="secondary-action-btn" id="copyOrderBtn">Copy Order Details</button>
+            <button type="button" class="secondary-action-btn" id="closeSuccessBtn">Done</button>
+        </div>
+        <p class="checkout-note">Send this Order ID in the Felicita Treats Instagram chat. The automatic Instagram reply will contain your complete order.</p>
+    </section>
 
 
     <!-- =====================================================
