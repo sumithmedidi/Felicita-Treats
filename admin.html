@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Portal — Felicita Treats</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="images/logo1.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+    <!-- =====================================================
+         1. SECURITY PASSCODE GATE
+         ===================================================== -->
+    <div class="pin-gate-overlay" id="pinGateOverlay">
+        <div class="pin-gate-card">
+            <div class="pin-brand">
+                <img src="images/logo1.png" alt="Felicita Treats Logo" class="pin-logo">
+                <h2>Felicita Treats</h2>
+                <p class="pin-sub">Bakery Owner & Kitchen Portal</p>
+            </div>
+
+            <div class="pin-prompt">
+                <span class="pin-lock-icon">🔒</span>
+                <p>Enter 4-Digit Owner Passcode</p>
+                <div class="pin-dots" id="pinDots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+                <input type="password" id="pinHiddenInput" maxlength="4" autocomplete="off" autofocus>
+                <p class="pin-error" id="pinError"></p>
+            </div>
+
+            <div class="pin-keypad">
+                <button type="button" class="key-btn" data-key="1">1</button>
+                <button type="button" class="key-btn" data-key="2">2</button>
+                <button type="button" class="key-btn" data-key="3">3</button>
+                <button type="button" class="key-btn" data-key="4">4</button>
+                <button type="button" class="key-btn" data-key="5">5</button>
+                <button type="button" class="key-btn" data-key="6">6</button>
+                <button type="button" class="key-btn" data-key="7">7</button>
+                <button type="button" class="key-btn" data-key="8">8</button>
+                <button type="button" class="key-btn" data-key="9">9</button>
+                <button type="button" class="key-btn action-key" data-action="clear">C</button>
+                <button type="button" class="key-btn" data-key="0">0</button>
+                <button type="button" class="key-btn action-key" data-action="back">⌫</button>
+            </div>
+
+            <p class="pin-hint">Default Owner PIN: <strong>1509</strong> (can be changed in settings)</p>
+            <a href="index.html" class="pin-back-link">← Return to Website</a>
+        </div>
+    </div>
+
+
+    <!-- =====================================================
+         2. MAIN OWNER DASHBOARD
+         ===================================================== -->
+    <div class="dashboard-wrapper" id="dashboardWrapper" style="display: none;">
+
+        <!-- TOP NAVIGATION -->
+        <header class="dash-header">
+            <div class="dash-header-left">
+                <a href="index.html" class="dash-brand">
+                    <img src="images/logo1.png" alt="Logo" class="dash-logo">
+                    <div>
+                        <h1>Felicita Treats</h1>
+                        <span class="dash-badge">Owner Portal</span>
+                    </div>
+                </a>
+                <div class="live-status-pill">
+                    <span class="pulse-dot"></span>
+                    <span>Live Orders</span>
+                </div>
+            </div>
+
+            <div class="dash-clock-wrap">
+                <span id="dashClock">--:--:--</span>
+                <small id="dashDate">----, -- --- ----</small>
+            </div>
+
+            <div class="dash-header-actions">
+                <button type="button" class="dash-btn" id="soundToggleBtn" title="Toggle Sound Alert">
+                    <span id="soundIcon">🔔</span> Sound <strong id="soundStatusText">ON</strong>
+                </button>
+                <button type="button" class="dash-btn" id="refreshBtn" title="Refresh Orders from Server">
+                    <span class="refresh-icon">🔄</span> Refresh
+                </button>
+                <button type="button" class="dash-btn primary" id="openManualOrderBtn">
+                    <span>+</span> Manual Order
+                </button>
+                <button type="button" class="dash-btn secondary" id="openPasteOrderBtn">
+                    <span>📋</span> Paste WhatsApp
+                </button>
+                <button type="button" class="dash-btn" id="openSettingsBtn" title="Portal Settings">
+                    <span>⚙️</span> Settings
+                </button>
+                <button type="button" class="dash-btn danger" id="logoutBtn" title="Logout">
+                    <span>🚪</span> Exit
+                </button>
+            </div>
+        </header>
+
+        <!-- NEW ORDER ALERT BANNER (REAL-TIME) -->
+        <div class="new-order-banner" id="newOrderBanner" style="display: none;">
+            <div class="banner-content">
+                <span class="banner-icon">🍰</span>
+                <div>
+                    <strong>New Order Placed!</strong>
+                    <span id="bannerOrderInfo">Order #FT-000000 just arrived!</span>
+                </div>
+            </div>
+            <button type="button" class="banner-dismiss" id="dismissBannerBtn">View Order ➔</button>
+        </div>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="dash-main">
+
+            <!-- KPI SUMMARY METRICS -->
+            <section class="kpi-grid">
+                <div class="kpi-card total-orders">
+                    <div class="kpi-icon">📦</div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Total Orders</span>
+                        <h2 class="kpi-value" id="kpiTotalOrders">0</h2>
+                        <small class="kpi-sub">All-time recorded</small>
+                    </div>
+                </div>
+
+                <div class="kpi-card today-orders">
+                    <div class="kpi-icon">📅</div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Today's Orders</span>
+                        <h2 class="kpi-value" id="kpiTodayOrders">0</h2>
+                        <small class="kpi-sub" id="kpiTodayDate">Today</small>
+                    </div>
+                </div>
+
+                <div class="kpi-card today-revenue">
+                    <div class="kpi-icon">💰</div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Today's Sales</span>
+                        <h2 class="kpi-value" id="kpiTodayRevenue">₹0</h2>
+                        <small class="kpi-sub">Total revenue today</small>
+                    </div>
+                </div>
+
+                <div class="kpi-card active-kitchen">
+                    <div class="kpi-icon">👨‍🍳</div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Active Kitchen</span>
+                        <h2 class="kpi-value" id="kpiActiveKitchen">0</h2>
+                        <small class="kpi-sub">Pending / In Baking / Out</small>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CONTROLS & FILTER BAR -->
+            <section class="controls-panel">
+                <div class="status-tabs" id="statusTabs">
+                    <button type="button" class="tab-btn active" data-status="all">
+                        All <span class="tab-count" id="countAll">0</span>
+                    </button>
+                    <button type="button" class="tab-btn status-received" data-status="received">
+                        🟡 New / Received <span class="tab-count" id="countReceived">0</span>
+                    </button>
+                    <button type="button" class="tab-btn status-preparing" data-status="preparing">
+                        🔵 Baking / Kitchen <span class="tab-count" id="countPreparing">0</span>
+                    </button>
+                    <button type="button" class="tab-btn status-out" data-status="out_for_delivery">
+                        🟣 Out for Delivery <span class="tab-count" id="countOut">0</span>
+                    </button>
+                    <button type="button" class="tab-btn status-delivered" data-status="delivered">
+                        🟢 Delivered <span class="tab-count" id="countDelivered">0</span>
+                    </button>
+                    <button type="button" class="tab-btn status-cancelled" data-status="cancelled">
+                        🔴 Cancelled <span class="tab-count" id="countCancelled">0</span>
+                    </button>
+                </div>
+
+                <div class="filter-actions-row">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="orderSearchInput" placeholder="Search by Customer, Phone, or Order ID (e.g. FT-123456)...">
+                        <button type="button" id="clearSearchBtn" class="clear-btn" style="display: none;">✕</button>
+                    </div>
+
+                    <div class="time-filter-wrap">
+                        <select id="timeFilterSelect" class="dash-select">
+                            <option value="all">Time: All Time</option>
+                            <option value="today" selected>Time: Today</option>
+                            <option value="yesterday">Time: Yesterday</option>
+                            <option value="week">Time: This Week</option>
+                        </select>
+                    </div>
+
+                    <div class="view-toggle">
+                        <button type="button" class="view-btn active" id="viewCardsBtn" title="Cards View">⊞ Cards</button>
+                        <button type="button" class="view-btn" id="viewTableBtn" title="Table View">☰ Table</button>
+                    </div>
+
+                    <div class="export-actions">
+                        <button type="button" class="dash-btn export-btn" id="exportCsvBtn" title="Export to Excel / CSV">
+                            📥 Export CSV
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ORDERS DISPLAY CONTAINER -->
+            <section class="orders-container">
+                <!-- EMPTY STATE -->
+                <div class="empty-orders-state" id="emptyOrdersState" style="display: none;">
+                    <div class="empty-icon">🍰</div>
+                    <h3>No Orders Found</h3>
+                    <p id="emptyOrdersText">No orders match the selected filters.</p>
+                    <div class="empty-actions">
+                        <button type="button" class="dash-btn primary" id="addSampleOrderBtn">+ Add Test Demo Order</button>
+                    </div>
+                </div>
+
+                <!-- CARDS VIEW (DEFAULT) -->
+                <div class="orders-cards-grid" id="ordersCardsGrid"></div>
+
+                <!-- TABLE VIEW (COMPACT) -->
+                <div class="orders-table-wrapper" id="ordersTableWrapper" style="display: none;">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date & Time</th>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+
+    <!-- =====================================================
+         3. MODALS
+         ===================================================== -->
+
+    <!-- MANUAL ORDER MODAL -->
+    <div class="admin-modal-backdrop" id="manualOrderBackdrop" style="display: none;">
+        <div class="admin-modal-card">
+            <div class="modal-header">
+                <h3>➕ Create Manual / Phone Order</h3>
+                <button type="button" class="modal-close-x" id="closeManualOrderX">×</button>
+            </div>
+            <form id="manualOrderForm" class="modal-form">
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Customer Name *</label>
+                        <input type="text" id="manualCustName" required placeholder="Full Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Mobile Number *</label>
+                        <input type="tel" id="manualCustPhone" required placeholder="10-digit number">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Delivery Address (Vizag) *</label>
+                    <textarea id="manualCustAddress" rows="2" required placeholder="Address with landmark"></textarea>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Preferred Delivery Date</label>
+                        <input type="date" id="manualCustDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Preferred Time</label>
+                        <input type="text" id="manualCustTime" placeholder="e.g. 4:00 PM">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Order Item & Price</label>
+                    <div class="manual-item-row">
+                        <select id="manualItemSelect" class="dash-select">
+                            <option value="Chocolate Cake|½ KG|399">Chocolate Cake (½ KG) — ₹399</option>
+                            <option value="Chocolate Cake|1 KG|599">Chocolate Cake (1 KG) — ₹599</option>
+                            <option value="Vanilla Cake|½ KG|349">Vanilla Cake (½ KG) — ₹349</option>
+                            <option value="Vanilla Cake|1 KG|499">Vanilla Cake (1 KG) — ₹499</option>
+                            <option value="Butterscotch Cake|½ KG|399">Butterscotch Cake (½ KG) — ₹399</option>
+                            <option value="Black Forest Cake|½ KG|449">Black Forest Cake (½ KG) — ₹449</option>
+                            <option value="Gulab Jamun Cake|½ KG|449">Gulab Jamun Cake (½ KG) — ₹449</option>
+                            <option value="Ferrero Rocher Cake|½ KG|499">Ferrero Rocher Cake (½ KG) — ₹499</option>
+                            <option value="Plain Cookie|Standard|39">Plain Cookie — ₹39</option>
+                            <option value="Double Chocolate Cookie|Standard|49">Double Chocolate Cookie — ₹49</option>
+                            <option value="Classic Brownie|Standard|79">Classic Brownie — ₹79</option>
+                            <option value="Nutella Brownie|Standard|99">Nutella Brownie — ₹99</option>
+                            <option value="Chocolate Cupcake|Single|49">Chocolate Cupcake — ₹49</option>
+                        </select>
+                        <input type="number" id="manualItemQty" min="1" max="50" value="1" style="width: 70px;">
+                        <button type="button" class="dash-btn" id="addManualItemBtn">+ Add</button>
+                    </div>
+                    <div class="manual-items-list" id="manualItemsList"></div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Payment Method</label>
+                        <select id="manualPaymentMethod" class="dash-select">
+                            <option value="upi">UPI / QR Code</option>
+                            <option value="card">Debit / Credit Card</option>
+                            <option value="cash">Direct Cash / In-store</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Special Notes</label>
+                        <input type="text" id="manualNotes" placeholder="e.g. Birthday message">
+                    </div>
+                </div>
+
+                <div class="manual-total-wrap">
+                    <span>Total Amount:</span>
+                    <strong id="manualTotalDisplay">₹0</strong>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="dash-btn" id="closeManualOrderBtn">Cancel</button>
+                    <button type="submit" class="dash-btn primary">Save & Add to Orders</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PASTE WHATSAPP ORDER MODAL -->
+    <div class="admin-modal-backdrop" id="pasteOrderBackdrop" style="display: none;">
+        <div class="admin-modal-card">
+            <div class="modal-header">
+                <h3>📋 Paste WhatsApp Order Message</h3>
+                <button type="button" class="modal-close-x" id="closePasteOrderX">×</button>
+            </div>
+            <div class="modal-form">
+                <p class="modal-instruction">
+                    Paste any WhatsApp message received from a customer or website notification. The system will auto-extract customer details, items, and total!
+                </p>
+                <div class="form-group">
+                    <textarea id="pasteOrderTextarea" rows="8" placeholder="Paste the full WhatsApp order text here..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="dash-btn" id="closePasteOrderBtn">Cancel</button>
+                    <button type="button" class="dash-btn primary" id="parseWhatsAppBtn">Auto-Parse & Import Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div class="admin-modal-backdrop" id="settingsBackdrop" style="display: none;">
+        <div class="admin-modal-card">
+            <div class="modal-header">
+                <h3>⚙️ Owner Portal Settings</h3>
+                <button type="button" class="modal-close-x" id="closeSettingsX">×</button>
+            </div>
+            <form id="settingsForm" class="modal-form">
+                <div class="form-group">
+                    <label>Owner WhatsApp Number (for incoming order alerts)</label>
+                    <input type="text" id="settingOwnerPhone" placeholder="919515372424" value="919515372424">
+                    <small>Default: 919515372424 (Include country code without + or dashes)</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Change Owner Portal Passcode PIN</label>
+                    <input type="password" id="settingAdminPin" maxlength="4" placeholder="Current PIN: 1509">
+                    <small>4-digit numeric passcode to access this portal</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Sound Notification</label>
+                    <div style="display: flex; gap: 12px; align-items: center; margin-top: 6px;">
+                        <button type="button" class="dash-btn" id="testChimeBtn">🔊 Test Alert Chime</button>
+                        <span>Plays gentle bakery chime on new order</span>
+                    </div>
+                </div>
+
+                <div class="form-group danger-zone">
+                    <label style="color: #b95d5d;">Data Management</label>
+                    <div style="display: flex; gap: 10px; margin-top: 8px;">
+                        <button type="button" class="dash-btn" id="exportBackupBtn">💾 Download JSON Backup</button>
+                        <button type="button" class="dash-btn danger" id="clearAllOrdersBtn">🗑️ Clear All Orders</button>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="dash-btn" id="closeSettingsBtn">Close</button>
+                    <button type="submit" class="dash-btn primary">Save Settings</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PRINT SLIP CONTAINER (ONLY VISIBLE DURING PRINT) -->
+    <div id="printSlipContainer" class="print-slip"></div>
+
+    <!-- SCRIPTS -->
+    <script src="admin.js"></script>
+</body>
+</html>
+

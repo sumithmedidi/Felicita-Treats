@@ -15,7 +15,6 @@ const productCards = document.querySelectorAll(".product-card");
 const navLinks = document.querySelectorAll(".menu-nav a");
 const sections = document.querySelectorAll("main section[id]");
 const toast = document.getElementById("toast");
-const instagramOrderBtn = document.getElementById("instagramOrderBtn");
 
 
 /* =========================================================
@@ -643,14 +642,40 @@ const checkoutPanel = document.getElementById("checkoutPanel");
 const checkoutBackdrop = document.getElementById("checkoutBackdrop");
 const checkoutClose = document.getElementById("checkoutClose");
 const checkoutOrder = document.getElementById("checkoutOrder");
+const checkoutSubtotal = document.getElementById("checkoutSubtotal");
 const checkoutTotal = document.getElementById("checkoutTotal");
 const customerName = document.getElementById("customerName");
 const customerPhone = document.getElementById("customerPhone");
+const customerAddress = document.getElementById("customerAddress");
+const customerNotes = document.getElementById("customerNotes");
 const placeOrderBtn = document.getElementById("placeOrderBtn");
+const placeOrderBtnText = document.getElementById("placeOrderBtnText");
+
+const paymentCards = document.querySelectorAll(".payment-card");
+const upiPaymentView = document.getElementById("upiPaymentView");
+const cardPaymentView = document.getElementById("cardPaymentView");
+const copyUpiBtn = document.getElementById("copyUpiBtn");
+const upiIntentBtn = document.getElementById("upiIntentBtn");
+const customerUtr = document.getElementById("customerUtr");
+const cardNumber = document.getElementById("cardNumber");
+const cardExpiry = document.getElementById("cardExpiry");
+const cardCvv = document.getElementById("cardCvv");
+const cardHolder = document.getElementById("cardHolder");
+
 const orderSuccessPanel = document.getElementById("orderSuccessPanel");
 const orderSuccessBackdrop = document.getElementById("orderSuccessBackdrop");
+const closeSuccessXBtn = document.getElementById("closeSuccessXBtn");
+const successGreeting = document.getElementById("successGreeting");
 const successOrderId = document.getElementById("successOrderId");
-const copyOrderBtn = document.getElementById("copyOrderBtn");
+const successPaymentStatus = document.getElementById("successPaymentStatus");
+const successCustomerName = document.getElementById("successCustomerName");
+const successCustomerPhone = document.getElementById("successCustomerPhone");
+const successDeliveryAddress = document.getElementById("successDeliveryAddress");
+const successOrderDate = document.getElementById("successOrderDate");
+const successItemsTable = document.getElementById("successItemsTable");
+const successReceiptSubtotal = document.getElementById("successReceiptSubtotal");
+const successReceiptTotal = document.getElementById("successReceiptTotal");
+const printReceiptBtn = document.getElementById("printReceiptBtn");
 const closeSuccessBtn = document.getElementById("closeSuccessBtn");
 
 let latestOrderText = "";
@@ -732,15 +757,16 @@ function closeCart() {
     }
 }
 
-function addToCart(product, variant, priceText) {
-    const price = Number(priceText.replace(/[^0-9.]/g, "")) || 0;
+function addToCart(product, variant, priceText, quantityToAdd = 1) {
+    const price = Number(String(priceText).replace(/[^0-9.]/g, "")) || 0;
     if (!price) return;
+    const qty = Math.max(1, Number(quantityToAdd) || 1);
 
     const id = `${product.name}__${variant}`;
     const existing = cart.find(item => item.id === id);
 
     if (existing) {
-        existing.quantity += 1;
+        existing.quantity += qty;
     } else {
         cart.push({
             id,
@@ -748,7 +774,7 @@ function addToCart(product, variant, priceText) {
             variant,
             price,
             image: product.image,
-            quantity: 1
+            quantity: qty
         });
     }
 
@@ -760,7 +786,7 @@ function addToCart(product, variant, priceText) {
     void cartTrigger.offsetWidth;
     cartTrigger.classList.add("bump");
 
-    showToast(`${product.name} added to cart`);
+    showToast(`Added ${qty} × ${product.name} to cart`);
 }
 
 function changeQuantity(id, delta) {
@@ -874,19 +900,201 @@ function closeProductModal() {
     }
 }
 
+let selectedPaymentMethod = "upi";
+let isSubmitting = false;
+
+// Field error elements
+const nameError = document.getElementById("nameError");
+const phoneError = document.getElementById("phoneError");
+const addressError = document.getElementById("addressError");
+const cardError = document.getElementById("cardError");
+const btnSpinner = document.getElementById("btnSpinner");
+
+function setFieldError(input, errorEl, message) {
+    if (!input || !errorEl) return;
+    if (message) {
+        input.classList.add("is-invalid");
+        input.classList.remove("is-valid");
+        errorEl.textContent = message;
+        errorEl.classList.add("visible");
+    } else {
+        input.classList.remove("is-invalid");
+        input.classList.add("is-valid");
+        errorEl.textContent = "";
+        errorEl.classList.remove("visible");
+    }
+}
+
+function clearFieldErrors() {
+    [customerName, customerPhone, customerAddress, cardNumber, cardExpiry, cardCvv].forEach(input => {
+        input?.classList.remove("is-invalid", "is-valid");
+    });
+    [nameError, phoneError, addressError, cardError].forEach(el => {
+        if (el) {
+            el.textContent = "";
+            el.classList.remove("visible");
+        }
+    });
+}
+
+// Live Validation listeners
+customerName?.addEventListener("input", () => {
+    const val = customerName.value.trim();
+    if (val.length >= 2) {
+        setFieldError(customerName, nameError, "");
+    }
+});
+customerName?.addEventListener("blur", () => {
+    const val = customerName.value.trim();
+    if (!val) {
+        setFieldError(customerName, nameError, "Please enter your full name");
+    } else if (val.length < 2) {
+        setFieldError(customerName, nameError, "Name must be at least 2 characters");
+    } else {
+        setFieldError(customerName, nameError, "");
+    }
+});
+
+customerPhone?.addEventListener("input", () => {
+    const raw = customerPhone.value.replace(/\D/g, "");
+    if (raw.length === 10) {
+        setFieldError(customerPhone, phoneError, "");
+    }
+});
+customerPhone?.addEventListener("blur", () => {
+    const raw = customerPhone.value.replace(/\D/g, "");
+    if (!raw) {
+        setFieldError(customerPhone, phoneError, "Please enter your 10-digit phone number");
+    } else if (raw.length !== 10) {
+        setFieldError(customerPhone, phoneError, "Phone number must be exactly 10 digits");
+    } else {
+        setFieldError(customerPhone, phoneError, "");
+    }
+});
+
+customerAddress?.addEventListener("input", () => {
+    const val = customerAddress.value.trim();
+    if (val.length >= 8) {
+        setFieldError(customerAddress, addressError, "");
+    }
+});
+customerAddress?.addEventListener("blur", () => {
+    const val = customerAddress.value.trim();
+    if (!val) {
+        setFieldError(customerAddress, addressError, "Please provide your delivery address in Vizag");
+    } else if (val.length < 8) {
+        setFieldError(customerAddress, addressError, "Please include house/flat no., street and landmark");
+    } else {
+        setFieldError(customerAddress, addressError, "");
+    }
+});
+
+const OFFICIAL_UPI_ID = "9059499756@axl";
+const OFFICIAL_UPI_NAME = "Felicita Treats";
+
+function updatePaymentUI() {
+    paymentCards.forEach(card => {
+        const method = card.dataset.method;
+        const isSelected = method === selectedPaymentMethod;
+        card.classList.toggle("is-selected", isSelected);
+        const radio = card.querySelector('input[type="radio"]');
+        if (radio) radio.checked = isSelected;
+    });
+
+    if (upiPaymentView) upiPaymentView.classList.toggle("is-hidden", selectedPaymentMethod !== "upi");
+    if (cardPaymentView) cardPaymentView.classList.toggle("is-hidden", selectedPaymentMethod !== "card");
+
+    const total = totalCartValue();
+    if (placeOrderBtnText && !isSubmitting) {
+        if (selectedPaymentMethod === "upi") {
+            placeOrderBtnText.textContent = `Pay ${formatPrice(total)} via UPI & Place Order`;
+        } else {
+            placeOrderBtnText.textContent = `Pay ${formatPrice(total)} Securely`;
+        }
+    }
+
+    const tempOrderId = `FT-${Date.now().toString().slice(-6)}`;
+    const upiPayload = `upi://pay?pa=${OFFICIAL_UPI_ID}&pn=${encodeURIComponent(OFFICIAL_UPI_NAME)}&am=${total}&cu=INR&tn=Order%20${tempOrderId}`;
+
+    if (upiIntentBtn) {
+        upiIntentBtn.href = upiPayload;
+    }
+
+    const upiQrCodeImg = document.getElementById("upiQrCodeImg");
+    if (upiQrCodeImg) {
+        upiQrCodeImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiPayload)}&margin=4`;
+    }
+}
+
+paymentCards.forEach(card => {
+    card.addEventListener("click", () => {
+        selectedPaymentMethod = card.dataset.method;
+        updatePaymentUI();
+    });
+});
+
+copyUpiBtn?.addEventListener("click", async () => {
+    const vpa = document.getElementById("upiVpaValue")?.textContent.trim() || OFFICIAL_UPI_ID;
+    try {
+        await navigator.clipboard.writeText(vpa);
+        const origText = copyUpiBtn.textContent;
+        copyUpiBtn.textContent = "Copied! ✓";
+        showToast("UPI ID (9059499756@axl) copied to clipboard");
+        setTimeout(() => {
+            copyUpiBtn.textContent = origText;
+        }, 2000);
+    } catch {
+        showToast("UPI ID: " + vpa);
+    }
+});
+
+// Card input auto-formatters & validation
+cardNumber?.addEventListener("input", e => {
+    let val = e.target.value.replace(/\D/g, "").slice(0, 16);
+    e.target.value = val.replace(/(\d{4})(?=\d)/g, "$1 ");
+    if (val.length >= 15 && cardError) {
+        cardError.textContent = "";
+        cardError.classList.remove("visible");
+    }
+});
+
+cardExpiry?.addEventListener("input", e => {
+    let val = e.target.value.replace(/\D/g, "").slice(0, 4);
+    if (val.length >= 2) {
+        e.target.value = val.slice(0, 2) + "/" + val.slice(2);
+    } else {
+        e.target.value = val;
+    }
+});
+
+cardCvv?.addEventListener("input", e => {
+    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
+});
+
 function openCheckout() {
-    if (!cart.length) return;
+    if (!cart.length) {
+        showToast("Your cart is empty");
+        return;
+    }
     closeCart();
+
     checkoutOrder.innerHTML = cart.map(item => `
         <div class="checkout-row">
             <span>${item.quantity} × ${escapeHtml(item.name)} (${escapeHtml(item.variant)})</span>
             <strong>${formatPrice(item.price * item.quantity)}</strong>
         </div>
     `).join("");
-    checkoutTotal.textContent = formatPrice(totalCartValue());
+
+    const total = totalCartValue();
+    if (checkoutSubtotal) checkoutSubtotal.textContent = formatPrice(total);
+    if (checkoutTotal) checkoutTotal.textContent = formatPrice(total);
+
+    updatePaymentUI();
+
     checkoutPanel.classList.add("open");
     checkoutBackdrop.classList.add("open");
     checkoutPanel.setAttribute("aria-hidden", "false");
+    checkoutBackdrop.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
 }
 
@@ -894,6 +1102,7 @@ function closeCheckout() {
     checkoutPanel.classList.remove("open");
     checkoutBackdrop.classList.remove("open");
     checkoutPanel.setAttribute("aria-hidden", "true");
+    checkoutBackdrop.setAttribute("aria-hidden", "true");
     if (!cartPanel.classList.contains("open") && !productModal.classList.contains("open")) {
         document.body.classList.remove("modal-open");
     }
@@ -908,71 +1117,164 @@ productModalBackdrop.addEventListener("click", closeProductModal);
 checkoutClose.addEventListener("click", closeCheckout);
 checkoutBackdrop.addEventListener("click", closeCheckout);
 
-// Product actions: cake price cards themselves are the Add to Cart controls.
-// This avoids showing the same cake size/price twice. Existing image paths are untouched.
+// Product card initialization: Selectable size variants, quantity stepper, dynamic live price and Add to Cart button
 productCards.forEach(card => {
     const product = getProductFromCard(card);
     const info = card.querySelector(".product-info");
     if (!info) return;
 
-    const cakeOptions = [...card.querySelectorAll(".cake-price")];
+    const cakePrices = card.querySelector(".cake-prices");
+    const cakeOptions = cakePrices ? [...cakePrices.querySelectorAll(".cake-price")] : [];
+
+    let currentVariant = "Standard";
+    let currentUnitPrice = 0;
+    let currentQuantity = 1;
+
+    // Build the dynamic order bar
+    const orderBar = document.createElement("div");
+    orderBar.className = "product-order-bar";
+
+    const pricingWrap = document.createElement("div");
+    pricingWrap.className = "product-pricing-wrap";
+
+    const dynamicPrice = document.createElement("div");
+    dynamicPrice.className = "product-dynamic-price";
+
+    const unitHint = document.createElement("div");
+    unitHint.className = "product-unit-hint";
+    unitHint.style.display = "none";
+
+    pricingWrap.appendChild(dynamicPrice);
+    pricingWrap.appendChild(unitHint);
+
+    const stepper = document.createElement("div");
+    stepper.className = "card-qty-stepper";
+    stepper.innerHTML = `
+        <button type="button" class="card-qty-btn minus" aria-label="Decrease quantity">−</button>
+        <span class="card-qty-val">1</span>
+        <button type="button" class="card-qty-btn plus" aria-label="Increase quantity">+</button>
+    `;
+
+    const minusBtn = stepper.querySelector(".minus");
+    const qtyVal = stepper.querySelector(".card-qty-val");
+    const plusBtn = stepper.querySelector(".plus");
+
+    orderBar.appendChild(pricingWrap);
+    orderBar.appendChild(stepper);
+
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "card-add-btn";
+    addBtn.innerHTML = `
+        <span class="card-add-icon">🛒</span>
+        <span class="card-add-text">Add to Cart</span>
+    `;
+
+    function updateCardPriceDisplay() {
+        const total = currentUnitPrice * currentQuantity;
+        dynamicPrice.textContent = formatPrice(total);
+
+        // Subtle pop animation
+        dynamicPrice.classList.remove("pop");
+        void dynamicPrice.offsetWidth;
+        dynamicPrice.classList.add("pop");
+
+        if (currentQuantity > 1) {
+            unitHint.textContent = `${formatPrice(currentUnitPrice)} each`;
+            unitHint.style.display = "block";
+        } else {
+            unitHint.style.display = "none";
+        }
+        qtyVal.textContent = currentQuantity;
+    }
+
+    plusBtn.addEventListener("click", event => {
+        event.stopPropagation();
+        if (currentQuantity < 50) {
+            currentQuantity += 1;
+            updateCardPriceDisplay();
+        }
+    });
+
+    minusBtn.addEventListener("click", event => {
+        event.stopPropagation();
+        if (currentQuantity > 1) {
+            currentQuantity -= 1;
+            updateCardPriceDisplay();
+        }
+    });
+
+    addBtn.addEventListener("click", event => {
+        event.stopPropagation();
+        if (!currentUnitPrice) return;
+
+        addToCart(product, currentVariant, currentUnitPrice, currentQuantity);
+
+        // Tactile button success feedback
+        addBtn.classList.add("is-added");
+        const originalText = addBtn.innerHTML;
+        addBtn.innerHTML = `<span>✓</span><span>Added (${currentQuantity})</span>`;
+
+        setTimeout(() => {
+            addBtn.classList.remove("is-added");
+            addBtn.innerHTML = originalText;
+        }, 1200);
+    });
 
     if (cakeOptions.length) {
-        // Use the existing price cards as the single Add to Cart controls.
-        cakeOptions.forEach(optionEl => {
-            const variant = optionEl.querySelector("span")?.textContent.trim() || "";
-            const priceText = optionEl.querySelector("strong")?.textContent.trim() || "";
+        // Find available options
+        const selectableOptions = [];
+        cakeOptions.forEach(opt => {
+            const variant = opt.querySelector("span")?.textContent.trim() || "";
+            const priceText = opt.querySelector("strong")?.textContent.trim() || "";
             const isUnavailable = !priceText || priceText.includes("-");
 
             if (isUnavailable) {
-                optionEl.classList.add("is-unavailable");
-                return;
+                opt.classList.add("is-unavailable");
+                opt.setAttribute("aria-disabled", "true");
+            } else {
+                opt.classList.add("is-selectable");
+                opt.setAttribute("role", "button");
+                opt.setAttribute("tabindex", "0");
+                const price = Number(priceText.replace(/[^0-9.]/g, "")) || 0;
+                selectableOptions.push({ element: opt, variant, price });
+
+                opt.addEventListener("click", event => {
+                    event.stopPropagation();
+                    cakeOptions.forEach(o => o.classList.remove("is-selected"));
+                    opt.classList.add("is-selected");
+                    currentVariant = variant;
+                    currentUnitPrice = price;
+                    updateCardPriceDisplay();
+                });
             }
-
-            optionEl.classList.add("is-addable");
-            optionEl.setAttribute("role", "button");
-            optionEl.setAttribute("tabindex", "0");
-            optionEl.setAttribute("aria-label", `Add ${product.name} ${variant} ${priceText} to cart`);
-
-            const selectOption = event => {
-                event.stopPropagation();
-                addToCart(product, variant, priceText);
-            };
-
-            optionEl.addEventListener("click", selectOption);
-            optionEl.addEventListener("keydown", event => {
-                if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    selectOption(event);
-                }
-            });
         });
 
-        return;
+        if (selectableOptions.length > 0) {
+            selectableOptions[0].element.classList.add("is-selected");
+            currentVariant = selectableOptions[0].variant;
+            currentUnitPrice = selectableOptions[0].price;
+            updateCardPriceDisplay();
+        }
+
+        info.appendChild(orderBar);
+        info.appendChild(addBtn);
+    } else {
+        // Non-cake items (cookies, brownies, cupcakes)
+        const priceEl = card.querySelector(".product-price");
+        if (priceEl) {
+            const basePrice = Number(priceEl.textContent.replace(/[^0-9.]/g, "")) || 0;
+            currentUnitPrice = basePrice;
+            currentVariant = "Standard";
+            priceEl.style.display = "none"; // replace with dynamic order bar
+            updateCardPriceDisplay();
+        }
+        info.appendChild(orderBar);
+        info.appendChild(addBtn);
     }
-
-    // Non-cake products keep one simple Add to Cart button.
-    if (info.querySelector(".product-actions")) return;
-
-    const actions = document.createElement("div");
-    actions.className = "product-actions";
-
-    const option = product.options[0];
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "add-to-cart-btn";
-    button.textContent = "Add to Cart";
-
-    button.addEventListener("click", event => {
-        event.stopPropagation();
-        addToCart(product, option.variant, option.priceText);
-    });
-
-    actions.appendChild(button);
-    info.appendChild(actions);
 });
 
-// Mobile bottom navigation uses the same sections as the desktop navigation.
+// Mobile bottom navigation
 mobileNavItems.forEach(item => {
     item.addEventListener("click", event => {
         const target = document.querySelector(item.getAttribute("href"));
@@ -984,7 +1286,6 @@ mobileNavItems.forEach(item => {
     });
 });
 
-// Keep the mobile active state synchronized with the existing section observer.
 const mobileSectionObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
         if (!entry.isIntersecting) return;
@@ -996,13 +1297,57 @@ const mobileSectionObserver = new IntersectionObserver(entries => {
 
 sections.forEach(section => mobileSectionObserver.observe(section));
 
-// Existing "Explore the menu" cart link closes the cart after navigation.
 document.querySelector(".cart-shop-link")?.addEventListener("click", () => {
     closeCart();
 });
 
-function openOrderSuccess(orderId) {
-    successOrderId.textContent = orderId;
+function openOrderSuccess(orderRecord) {
+    if (!orderRecord) return;
+    successOrderId.textContent = orderRecord.orderId;
+    if (successGreeting) successGreeting.textContent = `Thank you, ${orderRecord.name}!`;
+    if (successCustomerName) successCustomerName.textContent = orderRecord.name;
+    if (successCustomerPhone) successCustomerPhone.textContent = orderRecord.phone;
+    if (successDeliveryAddress) successDeliveryAddress.textContent = `${orderRecord.address}, Visakhapatnam`;
+    if (successOrderDate) {
+        successOrderDate.textContent = new Date().toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    }
+
+    if (successPaymentStatus) {
+        if (orderRecord.paymentMethod === "card") {
+            successPaymentStatus.textContent = `Payment Completed via Card (${formatPrice(orderRecord.total)})`;
+        } else {
+            successPaymentStatus.textContent = `Payment Completed via UPI (${formatPrice(orderRecord.total)})`;
+        }
+        document.getElementById("successStatusBanner")?.style.removeProperty("background");
+        document.getElementById("successStatusBanner")?.style.removeProperty("color");
+    }
+
+    if (successItemsTable) {
+        successItemsTable.innerHTML = orderRecord.items.map(item => `
+            <div class="receipt-item-line">
+                <span>${item.quantity} × ${escapeHtml(item.name)} (${escapeHtml(item.variant)})</span>
+                <strong>${formatPrice(item.price * item.quantity)}</strong>
+            </div>
+        `).join("");
+    }
+
+    if (successReceiptSubtotal) successReceiptSubtotal.textContent = formatPrice(orderRecord.total);
+    if (successReceiptTotal) successReceiptTotal.textContent = formatPrice(orderRecord.total);
+
+    // Update WhatsApp notification action button in receipt modal
+    const openWhatsAppNotifyBtn = document.getElementById("openWhatsAppNotifyBtn");
+    if (openWhatsAppNotifyBtn) {
+        const ownerPhone = localStorage.getItem("felicita_owner_phone") || "919515372424";
+        const waText = encodeURIComponent(orderRecord.message || "");
+        openWhatsAppNotifyBtn.href = `https://api.whatsapp.com/send?phone=${ownerPhone}&text=${waText}`;
+    }
+
     orderSuccessPanel.classList.add("open");
     orderSuccessBackdrop.classList.add("open");
     orderSuccessPanel.setAttribute("aria-hidden", "false");
@@ -1020,7 +1365,8 @@ function closeOrderSuccess() {
     }
 }
 
-function buildOrderMessage(orderId, name, phone) {
+function buildOrderMessage(orderId, name, phone, address, paymentMethod) {
+    const paymentLabel = paymentMethod === "card" ? "Paid via Card" : "Paid via UPI";
     return [
         "🍰 FELICITA TREATS",
         "━━━━━━━━━━━━━━━━━━",
@@ -1030,6 +1376,8 @@ function buildOrderMessage(orderId, name, phone) {
         "👤 CUSTOMER",
         `Name: ${name}`,
         `Phone: ${phone}`,
+        `Address: ${address}, Visakhapatnam`,
+        `Payment: ${paymentLabel}`,
         "",
         "🛒 ITEMS",
         ...cart.map(item => `${item.quantity} × ${item.name} (${item.variant}) — ${formatPrice(item.price * item.quantity)}`),
@@ -1041,16 +1389,61 @@ function buildOrderMessage(orderId, name, phone) {
 }
 
 placeOrderBtn.addEventListener("click", async () => {
-    const name = customerName.value.trim();
-    const phone = customerPhone.value.trim();
+    if (isSubmitting) return;
 
-    if (!name || !phone) {
-        showToast("Please enter your name and phone number");
-        return;
+    const name = customerName?.value.trim() || "";
+    const phone = customerPhone?.value.replace(/\D/g, "") || "";
+    const address = customerAddress?.value.trim() || "";
+    const notes = customerNotes?.value.trim() || "";
+
+    let hasError = false;
+
+    if (!name || name.length < 2) {
+        setFieldError(customerName, nameError, "Please enter your full name (at least 2 characters)");
+        if (!hasError) customerName?.focus();
+        hasError = true;
+    } else {
+        setFieldError(customerName, nameError, "");
     }
 
-    if (!/^[0-9+()\-\s]{8,}$/.test(phone)) {
-        showToast("Please enter a valid phone number");
+    if (!phone || phone.length !== 10) {
+        setFieldError(customerPhone, phoneError, "Please enter a valid 10-digit mobile number");
+        if (!hasError) customerPhone?.focus();
+        hasError = true;
+    } else {
+        setFieldError(customerPhone, phoneError, "");
+    }
+
+    if (!address || address.length < 6) {
+        setFieldError(customerAddress, addressError, "Please enter your delivery address with landmark in Vizag");
+        if (!hasError) customerAddress?.focus();
+        hasError = true;
+    } else {
+        setFieldError(customerAddress, addressError, "");
+    }
+
+    if (selectedPaymentMethod === "card") {
+        const rawCard = cardNumber?.value.replace(/\s/g, "") || "";
+        const expiry = cardExpiry?.value.trim() || "";
+        const cvv = cardCvv?.value.trim() || "";
+
+        if (rawCard.length < 15 || expiry.length < 4 || cvv.length < 3) {
+            if (cardError) {
+                cardError.textContent = "Please fill in valid card details (number, MM/YY and CVV)";
+                cardError.classList.add("visible");
+            }
+            if (!hasError) cardNumber?.focus();
+            hasError = true;
+        } else {
+            if (cardError) {
+                cardError.textContent = "";
+                cardError.classList.remove("visible");
+            }
+        }
+    }
+
+    if (hasError) {
+        showToast("Please fill in required fields highlighted in red");
         return;
     }
 
@@ -1060,72 +1453,106 @@ placeOrderBtn.addEventListener("click", async () => {
         return;
     }
 
-    const orderId = `FT-${Date.now().toString().slice(-6)}`;
-    latestOrderText = buildOrderMessage(orderId, name, phone);
+    // Set submitting loading state
+    isSubmitting = true;
+    placeOrderBtn.disabled = true;
+    btnSpinner?.classList.add("is-spinning");
+    if (placeOrderBtnText) placeOrderBtnText.textContent = "Processing Order...";
 
-    const orderRecord = {
-        orderId,
-        name,
-        phone,
-        items: cart.map(item => ({ ...item })),
-        total: totalCartValue(),
-        createdAt: new Date().toISOString(),
-        message: latestOrderText
-    };
-
-    localStorage.setItem("felicitaLastOrder", JSON.stringify(orderRecord));
-    localStorage.setItem("felicitaPendingInstagramOrder", JSON.stringify(orderRecord));
-
-    // Send the order to our server-side API. The Instagram access token is NEVER
-    // exposed to the browser. The server stores the order for the webhook.
     try {
-        const response = await fetch("/api/order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(orderRecord)
-        });
+        const orderId = `FT-${Math.floor(100000 + Math.random() * 900000)}`;
+        const total = totalCartValue();
+        latestOrderText = buildOrderMessage(orderId, name, phone, address, selectedPaymentMethod);
 
-        if (!response.ok) {
-            console.warn("Order API returned an error: - script.js:1089", await response.text());
+        const orderRecord = {
+            orderId,
+            name,
+            phone,
+            address,
+            notes,
+            status: "received",
+            paymentMethod: selectedPaymentMethod,
+            paymentDetails: {
+                methodName: selectedPaymentMethod === "upi" ? "UPI / QR Code" : "Credit / Debit Card",
+                utr: customerUtr?.value.trim() || "",
+                status: "Paid"
+            },
+            items: cart.map(item => ({ ...item })),
+            total,
+            createdAt: new Date().toISOString(),
+            message: latestOrderText
+        };
+
+        // Save last customer order
+        localStorage.setItem("felicitaLastOrder", JSON.stringify(orderRecord));
+
+        // Save to central orders repository for Owner Portal
+        try {
+            const allOrders = JSON.parse(localStorage.getItem("felicita_all_orders") || "[]");
+            allOrders.unshift(orderRecord);
+            localStorage.setItem("felicita_all_orders", JSON.stringify(allOrders));
+
+            // Real-time broadcast to open Owner Portal tabs
+            if (window.BroadcastChannel) {
+                const bc = new BroadcastChannel("felicita_orders");
+                bc.postMessage({ type: "NEW_ORDER", order: orderRecord });
+                bc.close();
+            }
+        } catch (storageErr) {
+            console.warn("Storage sync error:", storageErr);
         }
-    } catch (error) {
-        // The local order is still kept so the customer does not lose the order.
-        console.warn("Order API unavailable: - script.js:1093", error);
-    }
 
-    navigator.clipboard?.writeText(orderId).catch(() => {});
-    closeCheckout();
-    openOrderSuccess(orderId);
-    showToast(`Order ${orderId} prepared`);
+        // Send order to API
+        try {
+            await fetch("/api/order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(orderRecord)
+            });
+        } catch (error) {
+            console.warn("Order API unavailable:", error);
+        }
+
+        // WhatsApp notification directly to owner (+91 9515372424)
+        const ownerPhone = localStorage.getItem("felicita_owner_phone") || "919515372424";
+        const waUrl = `https://api.whatsapp.com/send?phone=${ownerPhone}&text=${encodeURIComponent(latestOrderText)}`;
+        try {
+            window.open(waUrl, "_blank");
+        } catch (waErr) {
+            console.log("Browser prevented auto-popup, button ready on screen", waErr);
+        }
+
+        // Clear cart
+        cart = [];
+        saveCart();
+        updateCartBadge();
+        renderCart();
+
+        closeCheckout();
+        openOrderSuccess(orderRecord);
+        showToast(`Order ${orderId} placed & WhatsApp notification sent! 🎉`);
+    } finally {
+        isSubmitting = false;
+        placeOrderBtn.disabled = false;
+        btnSpinner?.classList.remove("is-spinning");
+        updatePaymentUI();
+    }
 });
 
-instagramOrderBtn?.addEventListener("click", async () => {
-    const orderId = successOrderId.textContent.trim();
-    if (!orderId) return;
-
-    // Copy the exact Order ID so the customer only has to paste it into Instagram.
-    try {
-        await navigator.clipboard.writeText(orderId);
-    } catch {
-        // Clipboard access can be unavailable in some browsers; opening Instagram still works.
-    }
-
-    window.open("https://ig.me/m/Felicita_treats", "_blank", "noopener,noreferrer");
-    showToast("Order ID copied — send it in the Instagram chat");
+printReceiptBtn?.addEventListener("click", () => {
+    window.print();
 });
 
-copyOrderBtn.addEventListener("click", async () => {
-    if (!latestOrderText) return;
-    try {
-        await navigator.clipboard.writeText(latestOrderText);
-        showToast("Order details copied");
-    } catch {
-        showToast("Order details are ready to copy");
+closeSuccessBtn?.addEventListener("click", () => {
+    closeOrderSuccess();
+    const shopSection = document.getElementById("shop");
+    if (shopSection) {
+        shopSection.scrollIntoView({ behavior: "smooth" });
     }
 });
 
-closeSuccessBtn.addEventListener("click", closeOrderSuccess);
-orderSuccessBackdrop.addEventListener("click", closeOrderSuccess);
+closeSuccessXBtn?.addEventListener("click", closeOrderSuccess);
+orderSuccessBackdrop?.addEventListener("click", closeOrderSuccess);
 
 document.addEventListener("keydown", event => {
     if (event.key !== "Escape") return;
@@ -1133,6 +1560,54 @@ document.addEventListener("keydown", event => {
     else if (checkoutPanel.classList.contains("open")) closeCheckout();
     else if (productModal.classList.contains("open")) closeProductModal();
     else if (cartPanel.classList.contains("open")) closeCart();
+});
+
+// Image loading shimmer removal
+document.querySelectorAll(".product-img").forEach(wrap => {
+    const img = wrap.querySelector("img");
+    if (!img) return;
+    if (!img.complete) {
+        wrap.classList.add("is-loading");
+        img.addEventListener("load", () => wrap.classList.remove("is-loading"), { once: true });
+        img.addEventListener("error", () => wrap.classList.remove("is-loading"), { once: true });
+    }
+});
+
+// Offline & Online Network Monitoring
+function getOrCreateOfflineBanner() {
+    let banner = document.getElementById("offlineBanner");
+    if (!banner) {
+        banner = document.createElement("div");
+        banner.id = "offlineBanner";
+        banner.className = "offline-banner";
+        banner.setAttribute("role", "status");
+        banner.setAttribute("aria-live", "polite");
+        banner.textContent = "⚠️ You are offline. Your cart and order details remain saved safely.";
+        document.body.prepend(banner);
+    }
+    return banner;
+}
+
+window.addEventListener("offline", () => {
+    const banner = getOrCreateOfflineBanner();
+    banner.classList.add("is-visible");
+    showToast("Internet connection lost. Cart is saved locally.");
+});
+
+window.addEventListener("online", () => {
+    const banner = document.getElementById("offlineBanner");
+    if (banner) {
+        banner.classList.remove("is-visible");
+        showToast("Connection restored ✓");
+    }
+});
+
+// Global Error & Promise Monitoring
+window.addEventListener("error", event => {
+    console.warn("[Felicita Error Catch]:", event.message);
+});
+window.addEventListener("unhandledrejection", event => {
+    console.warn("[Felicita Rejection Catch]:", event.reason);
 });
 
 updateCartBadge();

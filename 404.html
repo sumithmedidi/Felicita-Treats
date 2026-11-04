@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 — Treat Not Found | Felicita Treats</title>
+    <meta name="robots" content="noindex, follow">
+    <link rel="icon" type="image/png" href="images/logo1.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=DM+Sans:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .error-page-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            background: #fffaf4;
+            color: #3e261b;
+        }
+        .error-cake-icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+            animation: floatCake 3s ease-in-out infinite;
+        }
+        @keyframes floatCake {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+        .error-code {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            color: #a85c61;
+            margin-bottom: 10px;
+        }
+        .error-title {
+            font-family: 'DM Serif Display', 'Playfair Display', serif;
+            font-size: clamp(32px, 6vw, 48px);
+            margin-bottom: 14px;
+            color: #2b1812;
+        }
+        .error-desc {
+            max-width: 440px;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #766b66;
+            margin-bottom: 30px;
+        }
+        .error-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 52px;
+            padding: 0 32px;
+            border-radius: 999px;
+            background: #a85c61;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            box-shadow: 0 10px 24px rgba(168, 92, 97, 0.25);
+            transition: all 0.25s ease;
+        }
+        .error-action-btn:hover {
+            background: #8f4448;
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(143, 68, 72, 0.32);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-page-container">
+        <div class="error-cake-icon" aria-hidden="true">🍰</div>
+        <p class="error-code">404 ERROR</p>
+        <h1 class="error-title">This treat seems to have crumbed away!</h1>
+        <p class="error-desc">We couldn't find the page you were looking for. It might have been moved or eaten fresh out of the oven.</p>
+        <a href="index.html" class="error-action-btn">← Back to Sweet Menu</a>
+    </div>
+</body>
+</html>
