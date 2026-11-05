@@ -1,0 +1,298 @@
+[
+  {
+    "category": "cakes",
+    "product_name": "Chocolate Cake",
+    "filename": "cakes/chocolate-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Vanilla Cake",
+    "filename": "cakes/vanilla-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Butterscotch Cake",
+    "filename": "cakes/butterscotch-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Black Forest Cake",
+    "filename": "cakes/black-forest-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Coffee Mocha Cake",
+    "filename": "cakes/coffee-mocha-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Almond Cake",
+    "filename": "cakes/almond-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "KitKat Cake",
+    "filename": "cakes/kitkat-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Cookies and Cream Cake",
+    "filename": "cakes/cookies-and-cream-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Fruit and Nut Cake",
+    "filename": "cakes/fruit-and-nut-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Choco Chip Cake",
+    "filename": "cakes/choco-chip-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Chocolate Truffle Cake",
+    "filename": "cakes/chocolate-truffle-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Chocolate Almond Cake",
+    "filename": "cakes/chocolate-almond-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Ferrero Rocher Cake",
+    "filename": "cakes/ferrero-rocher-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Vanilla Chocolate Cake",
+    "filename": "cakes/vanilla-chocolate-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Gulab Jamun Cake",
+    "filename": "cakes/gulab-jamun-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cakes",
+    "product_name": "Red Velvet Cake",
+    "filename": "cakes/red-velvet-cake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cookies",
+    "product_name": "Plain Cookie",
+    "filename": "cookies/plain-cookie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cookies",
+    "product_name": "Chocolate Cookie",
+    "filename": "cookies/chocolate-cookie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cookies",
+    "product_name": "Double Chocolate Cookie",
+    "filename": "cookies/double-chocolate-cookie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cookies",
+    "product_name": "Triple Chocolate Cookie",
+    "filename": "cookies/triple-chocolate-cookie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cookies",
+    "product_name": "Oreo Cookie",
+    "filename": "cookies/oreo-cookie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cookies",
+    "product_name": "Chocolate Classic Cookie",
+    "filename": "cookies/chocolate-classic-cookie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cookies",
+    "product_name": "Biscoff Cookie",
+    "filename": "cookies/biscoff-cookie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "brownies",
+    "product_name": "Oreo Brownie",
+    "filename": "brownies/oreo-brownie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "brownies",
+    "product_name": "100 HR Brownie",
+    "filename": "brownies/100-hr-brownie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "brownies",
+    "product_name": "Biscoff Brownie",
+    "filename": "brownies/biscoff-brownie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "brownies",
+    "product_name": "Nutella Brownie",
+    "filename": "brownies/nutella-brownie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "brownies",
+    "product_name": "Double Chocolate Brownie",
+    "filename": "brownies/double-chocolate-brownie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "brownies",
+    "product_name": "Classic Brownie",
+    "filename": "brownies/classic-brownie.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cupcakes",
+    "product_name": "Chocolate Cupcake",
+    "filename": "cupcakes/chocolate-cupcake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cupcakes",
+    "product_name": "Vanilla Cupcake",
+    "filename": "cupcakes/vanilla-cupcake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cupcakes",
+    "product_name": "Black Forest Cupcake",
+    "filename": "cupcakes/black-forest-cupcake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cupcakes",
+    "product_name": "Coffee Mocha Cupcake",
+    "filename": "cupcakes/coffee-mocha-cupcake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cupcakes",
+    "product_name": "Chocolate Truffle Cupcake",
+    "filename": "cupcakes/chocolate-truffle-cupcake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cupcakes",
+    "product_name": "Cookies and Cream Cupcake",
+    "filename": "cupcakes/cookies-and-cream-cupcake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cupcakes",
+    "product_name": "Ferrero Rocher Cupcake",
+    "filename": "cupcakes/ferrero-rocher-cupcake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  },
+  {
+    "category": "cupcakes",
+    "product_name": "Vanilla Choco Cupcake",
+    "filename": "cupcakes/vanilla-choco-cupcake.webp",
+    "source": "AI-generated menu collage crop",
+    "format": "WebP",
+    "dimensions": "768x768"
+  }
+]
