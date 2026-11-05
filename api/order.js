@@ -91,7 +91,59 @@ module.exports = async (req, res) => {
       }
     }
 
-    // Optional: Server-side WhatsApp or Webhook notification
+    // Automated Server WhatsApp Dispatch to Owner (+91 9515372424)
+    const ownerWhatsAppNumber = process.env.OWNER_WHATSAPP_NUMBER || "919515372424";
+    
+    // 1. Meta WhatsApp Cloud API
+    const metaToken = process.env.WHATSAPP_API_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN;
+    const metaPhoneId = process.env.WHATSAPP_PHONE_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+    if (metaToken && metaPhoneId) {
+      try {
+        await fetch(`https://graph.facebook.com/v20.0/${metaPhoneId}/messages`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${metaToken}`
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: ownerWhatsAppNumber,
+            type: "text",
+            text: { body: order.message }
+          })
+        });
+      } catch (metaErr) {
+        console.warn("Meta WhatsApp Cloud API error:", metaErr);
+      }
+    }
+
+    // 2. Twilio WhatsApp API
+    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+    const twilioAuth = process.env.TWILIO_AUTH_TOKEN;
+    const twilioFrom = process.env.TWILIO_WHATSAPP_FROM;
+    if (twilioSid && twilioAuth && twilioFrom) {
+      try {
+        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`;
+        const auth = Buffer.from(`${twilioSid}:${twilioAuth}`).toString("base64");
+        const params = new URLSearchParams();
+        params.append("From", twilioFrom.startsWith("whatsapp:") ? twilioFrom : `whatsapp:${twilioFrom}`);
+        params.append("To", `whatsapp:+${ownerWhatsAppNumber.replace(/\D/g, "")}`);
+        params.append("Body", order.message);
+
+        await fetch(twilioUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Basic ${auth}`
+          },
+          body: params.toString()
+        });
+      } catch (twilioErr) {
+        console.warn("Twilio WhatsApp API error:", twilioErr);
+      }
+    }
+
+    // 3. Webhook / Discord / CallMeBot Notification
     const webhookUrl = process.env.WHATSAPP_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
     if (webhookUrl) {
       try {

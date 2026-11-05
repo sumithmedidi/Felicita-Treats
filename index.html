@@ -2563,6 +2563,9 @@
                 <button type="button" class="payment-tab-btn is-active" data-method="upi">
                     <span>UPI Apps</span>
                 </button>
+                <button type="button" class="payment-tab-btn" data-method="razorpay">
+                    <span>Razorpay Gateway</span>
+                </button>
                 <button type="button" class="payment-tab-btn" data-method="debit">
                     <span>Debit Card</span>
                 </button>
@@ -2596,6 +2599,15 @@
                     <span>Bakery UPI ID: <strong>9059499756@axl</strong></span>
                     <button type="button" class="copy-upi-btn" id="copyUpiBtn">Copy</button>
                 </div>
+            </div>
+
+            <!-- RAZORPAY GATEWAY VIEW -->
+            <div class="payment-method-view is-hidden" id="razorpayPaymentView">
+                <p class="payment-sub-note">Pay securely through Razorpay official checkout (Google Pay, PhonePe, Paytm, All Cards, NetBanking):</p>
+                <button type="button" class="cart-checkout-btn razorpay-pay-btn" id="payViaRazorpayBtn">
+                    <span>Pay via Official Razorpay Gateway</span>
+                </button>
+                <small class="utr-help-hint" style="margin-top: 8px; text-align: center; display: block;">Instant automated bank verification & webhook settlement.</small>
             </div>
 
             <!-- DEBIT CARD VIEW -->

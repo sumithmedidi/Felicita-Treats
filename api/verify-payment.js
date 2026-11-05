@@ -97,6 +97,26 @@ module.exports = async (req, res) => {
 
     // 3. Razorpay Gateway Token Verification
     if (razorpayPaymentId) {
+      const razorpayOrderId = cleanString(body.razorpayOrderId, 60);
+      const razorpaySignature = cleanString(body.razorpaySignature, 120);
+      const secret = process.env.RAZORPAY_KEY_SECRET;
+
+      if (secret && razorpayOrderId && razorpaySignature) {
+        const crypto = require("crypto");
+        const expected = crypto
+          .createHmac("sha256", secret)
+          .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+          .digest("hex");
+
+        if (expected !== razorpaySignature) {
+          return json(res, 400, {
+            ok: false,
+            verified: false,
+            error: "Razorpay payment signature mismatch. Transaction could not be verified."
+          });
+        }
+      }
+
       return json(res, 200, {
         ok: true,
         verified: true,

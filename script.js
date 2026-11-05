@@ -732,23 +732,29 @@ function closeCart() {
     }
 }
 
-function addToCart(product, variant, priceText) {
-    const price = Number(priceText.replace(/[^0-9.]/g, "")) || 0;
+function addToCart(product, variant, priceVal, quantityToAdd = 1) {
+    let price = 0;
+    if (typeof priceVal === "number") {
+        price = priceVal;
+    } else {
+        price = Number(String(priceVal).replace(/[^0-9.]/g, "")) || 0;
+    }
     if (!price) return;
 
+    const qty = Math.max(1, Number(quantityToAdd) || 1);
     const id = `${product.name}__${variant}`;
     const existing = cart.find(item => item.id === id);
 
     if (existing) {
-        existing.quantity += 1;
+        existing.quantity += qty;
     } else {
         cart.push({
             id,
             name: product.name,
             variant,
             price,
-            image: product.image,
-            quantity: 1
+            image: product.image || "",
+            quantity: qty
         });
     }
 
@@ -760,9 +766,9 @@ function addToCart(product, variant, priceText) {
     void cartTrigger.offsetWidth;
     cartTrigger.classList.add("bump");
 
-    showToast(`${product.name} added to cart`);
+    const qtyText = qty > 1 ? `${qty} Ã— ` : "";
+    showToast(`Added ${qtyText}${product.name} (${variant}) to cart`);
 }
-
 function changeQuantity(id, delta) {
     const item = cart.find(entry => entry.id === id);
     if (!item) return;
@@ -908,70 +914,113 @@ productModalBackdrop.addEventListener("click", closeProductModal);
 checkoutClose.addEventListener("click", closeCheckout);
 checkoutBackdrop.addEventListener("click", closeCheckout);
 
-// Product actions: cake price cards themselves are the Add to Cart controls.
-// This avoids showing the same cake size/price twice. Existing image paths are untouched.
+// Product actions: Every menu item gets a quantity stepper and dedicated Add to Cart button.
+// The price dynamically updates whenever size variant or quantity is changed.
 productCards.forEach(card => {
     const product = getProductFromCard(card);
     const info = card.querySelector(".product-info");
     if (!info) return;
 
     const cakeOptions = [...card.querySelectorAll(".cake-price")];
+    let selectedVariant = "Standard";
+    let unitPrice = 0;
+    let cardQty = 1;
 
     if (cakeOptions.length) {
-        // Use the existing price cards as the single Add to Cart controls.
-        cakeOptions.forEach(optionEl => {
-            const variant = optionEl.querySelector("span")?.textContent.trim() || "";
-            const priceText = optionEl.querySelector("strong")?.textContent.trim() || "";
-            const isUnavailable = !priceText || priceText.includes("-");
-
-            if (isUnavailable) {
-                optionEl.classList.add("is-unavailable");
-                return;
-            }
-
-            optionEl.classList.add("is-addable");
-            optionEl.setAttribute("role", "button");
-            optionEl.setAttribute("tabindex", "0");
-            optionEl.setAttribute("aria-label", `Add ${product.name} ${variant} ${priceText} to cart`);
-
-            const selectOption = event => {
-                event.stopPropagation();
-                addToCart(product, variant, priceText);
-            };
-
-            optionEl.addEventListener("click", selectOption);
-            optionEl.addEventListener("keydown", event => {
-                if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    selectOption(event);
-                }
-            });
+        const availableOptions = cakeOptions.filter(el => {
+            const txt = el.querySelector("strong")?.textContent.trim() || "";
+            return txt && !txt.includes("-");
         });
 
-        return;
+        if (availableOptions.length > 0) {
+            const first = availableOptions[0];
+            first.classList.add("is-active");
+            selectedVariant = first.querySelector("span")?.textContent.trim() || "Standard";
+            unitPrice = Number(first.querySelector("strong")?.textContent.replace(/[^0-9.]/g, "")) || 0;
+        }
+
+        availableOptions.forEach(optionEl => {
+            optionEl.setAttribute("role", "button");
+            optionEl.setAttribute("tabindex", "0");
+            optionEl.addEventListener("click", () => {
+                availableOptions.forEach(o => o.classList.remove("is-active"));
+                optionEl.classList.add("is-active");
+                selectedVariant = optionEl.querySelector("span")?.textContent.trim() || "Standard";
+                unitPrice = Number(optionEl.querySelector("strong")?.textContent.replace(/[^0-9.]/g, "")) || 0;
+                updateCardPrice();
+            });
+        });
+    } else {
+        const priceEl = card.querySelector(".product-price");
+        const priceText = priceEl?.textContent.trim() || "";
+        unitPrice = Number(priceText.replace(/[^0-9.]/g, "")) || 0;
+        selectedVariant = product.options[0]?.variant || "Standard";
     }
 
-    // Non-cake products keep one simple Add to Cart button.
-    if (info.querySelector(".product-actions")) return;
+    if (unitPrice === 0) return;
 
-    const actions = document.createElement("div");
-    actions.className = "product-actions";
+    let actionBar = info.querySelector(".card-action-bar");
+    if (!actionBar) {
+        actionBar = document.createElement("div");
+        actionBar.className = "card-action-bar";
+        actionBar.innerHTML = `
+            <div class="card-qty-stepper">
+                <button type="button" class="card-qty-btn dec-btn" aria-label="Decrease quantity">-</button>
+                <span class="card-qty-value">1</span>
+                <button type="button" class="card-qty-btn inc-btn" aria-label="Increase quantity">+</button>
+            </div>
+            <button type="button" class="card-add-btn">
+                <span>Add to Cart</span>
+                <strong class="card-live-price">${formatPrice(unitPrice)}</strong>
+            </button>
+        `;
+        info.appendChild(actionBar);
+    }
 
-    const option = product.options[0];
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "add-to-cart-btn";
-    button.textContent = "Add to Cart";
+    const qtyValEl = actionBar.querySelector(".card-qty-value");
+    const decBtn = actionBar.querySelector(".dec-btn");
+    const incBtn = actionBar.querySelector(".inc-btn");
+    const addBtn = actionBar.querySelector(".card-add-btn");
+    const priceDisplay = actionBar.querySelector(".card-live-price");
 
-    button.addEventListener("click", event => {
-        event.stopPropagation();
-        addToCart(product, option.variant, option.priceText);
+    function updateCardPrice() {
+        const total = unitPrice * cardQty;
+        if (priceDisplay) priceDisplay.textContent = formatPrice(total);
+        if (qtyValEl) qtyValEl.textContent = cardQty;
+    }
+
+    decBtn?.addEventListener("click", e => {
+        e.stopPropagation();
+        if (cardQty > 1) {
+            cardQty -= 1;
+            updateCardPrice();
+        }
     });
 
-    actions.appendChild(button);
-    info.appendChild(actions);
-});
+    incBtn?.addEventListener("click", e => {
+        e.stopPropagation();
+        if (cardQty < 99) {
+            cardQty += 1;
+            updateCardPrice();
+        }
+    });
 
+    addBtn?.addEventListener("click", e => {
+        e.stopPropagation();
+        addToCart(product, selectedVariant, unitPrice, cardQty);
+
+        addBtn.classList.add("is-added");
+        const origHtml = addBtn.innerHTML;
+        addBtn.innerHTML = `<span>Added! &#10003;</span><strong>(${cardQty})</strong>`;
+        setTimeout(() => {
+            addBtn.classList.remove("is-added");
+            addBtn.innerHTML = origHtml;
+            updateCardPrice();
+        }, 1200);
+    });
+
+    updateCardPrice();
+});
 // Mobile bottom navigation uses the same sections as the desktop navigation.
 mobileNavItems.forEach(item => {
     item.addEventListener("click", event => {
@@ -1057,6 +1106,7 @@ const summaryCustomerSlot = document.getElementById("summaryCustomerSlot");
 // Payment Tabs & Views
 const paymentTabBtns = document.querySelectorAll(".payment-tab-btn");
 const upiPaymentView = document.getElementById("upiPaymentView");
+const razorpayPaymentView = document.getElementById("razorpayPaymentView");
 const debitCardPaymentView = document.getElementById("debitCardPaymentView");
 const creditCardPaymentView = document.getElementById("creditCardPaymentView");
 const copyUpiBtn = document.getElementById("copyUpiBtn");
@@ -1066,6 +1116,7 @@ const payViaGPayBtn = document.getElementById("payViaGPayBtn");
 const payViaPhonePeBtn = document.getElementById("payViaPhonePeBtn");
 const payViaPaytmBtn = document.getElementById("payViaPaytmBtn");
 const payViaGenericUpiBtn = document.getElementById("payViaGenericUpiBtn");
+const payViaRazorpayBtn = document.getElementById("payViaRazorpayBtn");
 
 // Debit Card Form
 const debitCardNumber = document.getElementById("debitCardNumber");
@@ -1119,7 +1170,6 @@ let activeGatewayMethod = "upi";
 let gatewayTimerInterval = null;
 let activeCardOrder = null;
 
-// Ensure default delivery date is today
 function initDeliveryDate() {
     if (!deliveryDate) return;
     const now = new Date();
@@ -1131,7 +1181,6 @@ function initDeliveryDate() {
     if (!deliveryDate.value) deliveryDate.value = todayStr;
 }
 
-// Override openCheckout to ensure starting on Step 1
 const origOpenCheckout = openCheckout;
 openCheckout = function() {
     if (!cart.length) {
@@ -1225,6 +1274,7 @@ paymentTabBtns.forEach(btn => {
         const method = btn.dataset.method;
 
         upiPaymentView?.classList.toggle("is-hidden", method !== "upi");
+        razorpayPaymentView?.classList.toggle("is-hidden", method !== "razorpay");
         debitCardPaymentView?.classList.toggle("is-hidden", method !== "debit");
         creditCardPaymentView?.classList.toggle("is-hidden", method !== "credit");
     });
@@ -1289,7 +1339,107 @@ function buildOrderPayload(methodKey, methodName) {
     };
 }
 
-// UPI 1-Click App Payment Launch
+// 1. RAZORPAY AUTOMATED MERCHANT GATEWAY CHECKOUT
+payViaRazorpayBtn?.addEventListener("click", async () => {
+    if (!validateStep1()) {
+        goToStep(1);
+        return;
+    }
+    if (!cart.length) {
+        showToast("Your cart is empty");
+        return;
+    }
+
+    const order = buildOrderPayload("razorpay", "Razorpay Gateway");
+    payViaRazorpayBtn.disabled = true;
+    payViaRazorpayBtn.innerHTML = `<span>Connecting to Razorpay Gateway...</span>`;
+
+    try {
+        const rzpInitRes = await fetch("/api/create-razorpay-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                amount: order.total,
+                orderId: order.orderId,
+                name: order.name,
+                phone: order.phone
+            })
+        });
+
+        const rzpInitData = await rzpInitRes.json();
+        if (!rzpInitData.ok) {
+            showToast(rzpInitData.error || "Unable to start Razorpay");
+            return;
+        }
+
+        const options = {
+            key: rzpInitData.keyId,
+            amount: Math.round(order.total * 100),
+            currency: "INR",
+            name: "Felicita Treats",
+            description: `Order ${order.orderId}`,
+            image: "images/logo1.png",
+            order_id: rzpInitData.isDemo ? undefined : rzpInitData.razorpayOrderId,
+            prefill: {
+                name: order.name,
+                contact: `+91${order.phone}`
+            },
+            theme: { color: "#a85c52" },
+            handler: async function(response) {
+                try {
+                    const verifyRes = await fetch("/api/verify-payment", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            orderId: order.orderId,
+                            amount: order.total,
+                            paymentMethod: "razorpay",
+                            razorpayPaymentId: response.razorpay_payment_id,
+                            razorpayOrderId: response.razorpay_order_id,
+                            razorpaySignature: response.razorpay_signature
+                        })
+                    });
+
+                    const verifyData = await verifyRes.json();
+                    if (verifyData.ok && verifyData.verified) {
+                        order.paymentDetails = {
+                            methodName: "Razorpay (Verified Gateway)",
+                            gatewayTxnId: response.razorpay_payment_id,
+                            status: "Verified & Paid"
+                        };
+                        await finalizeVerifiedOrder(order);
+                    } else {
+                        showToast(`Verification rejected: ${verifyData.error || "Transaction not verified"}`);
+                    }
+                } catch {
+                    showToast("Error verifying Razorpay settlement.");
+                }
+            },
+            modal: {
+                ondismiss: function() {
+                    showToast("Razorpay payment cancelled. Order was not placed.");
+                }
+            }
+        };
+
+        if (window.Razorpay) {
+            const rzpInstance = new window.Razorpay(options);
+            rzpInstance.open();
+        } else {
+            showToast("Razorpay SDK not loaded. Falling back to UPI direct apps.");
+            const upiTab = document.querySelector('[data-method="upi"]');
+            upiTab?.click();
+        }
+    } catch (e) {
+        console.error("Razorpay error:", e);
+        showToast("Gateway error. Please use direct UPI or Card.");
+    } finally {
+        payViaRazorpayBtn.disabled = false;
+        payViaRazorpayBtn.innerHTML = `<span>Pay via Official Razorpay Gateway</span>`;
+    }
+});
+
+// 2. UPI 1-Click App Payment Launch
 function initiateUpiApp(appName, methodKey) {
     if (!validateStep1()) {
         goToStep(1);
@@ -1306,7 +1456,6 @@ function initiateUpiApp(appName, methodKey) {
     activeGatewayApp = appName;
     activeGatewayMethod = methodKey;
 
-    // Mobile Deep Link
     let deepLink = `upi://pay?pa=${OFFICIAL_UPI_ID}&pn=${encodeURIComponent(OFFICIAL_UPI_NAME)}&am=${total}&cu=INR&tn=${encodeURIComponent(`Order ${order.orderId}`)}`;
     if (methodKey === "phonepe") {
         deepLink = `phonepe://pay?pa=${OFFICIAL_UPI_ID}&pn=${encodeURIComponent(OFFICIAL_UPI_NAME)}&am=${total}&cu=INR&tn=${encodeURIComponent(`Order ${order.orderId}`)}`;
@@ -1320,7 +1469,6 @@ function initiateUpiApp(appName, methodKey) {
         console.log("App redirect triggered", e);
     }
 
-    // Launch Gateway Verification Chamber
     if (gatewayPayableAmount) gatewayPayableAmount.textContent = formatPrice(total);
     if (gatewayAppTitle) gatewayAppTitle.textContent = `${appName} Verification`;
     if (gatewayStatusSub) gatewayStatusSub.textContent = `Please approve the transfer of ${formatPrice(total)} in ${appName}, then enter the Bank UTR.`;
@@ -1331,7 +1479,6 @@ function initiateUpiApp(appName, methodKey) {
         gatewayErrorMsg.classList.remove("visible");
     }
 
-    // 5-minute countdown
     let timeLeft = 299;
     clearInterval(gatewayTimerInterval);
     gatewayTimerInterval = setInterval(() => {
@@ -1386,7 +1533,6 @@ gatewayCancelPaymentBtn?.addEventListener("click", () => {
     showToast("Payment cancelled. No money was deducted.");
 });
 
-// Verify Bank Settlement via Gateway
 gatewayConfirmVerifyBtn?.addEventListener("click", async () => {
     if (!activeGatewayOrder) {
         showToast("Session expired. Please restart checkout.");
@@ -1429,7 +1575,6 @@ gatewayConfirmVerifyBtn?.addEventListener("click", async () => {
             return;
         }
 
-        // VERIFIED!
         activeGatewayOrder.paymentDetails = {
             methodName: `${activeGatewayApp} (Verified Gateway)`,
             utr: utr,
@@ -1440,7 +1585,7 @@ gatewayConfirmVerifyBtn?.addEventListener("click", async () => {
         const finalOrder = activeGatewayOrder;
         closeGatewayModal();
         await finalizeVerifiedOrder(finalOrder);
-    } catch (err) {
+    } catch {
         if (gatewayErrorMsg) {
             gatewayErrorMsg.textContent = "Unable to reach verification server. Please check your connection.";
             gatewayErrorMsg.classList.add("visible");
@@ -1452,7 +1597,7 @@ gatewayConfirmVerifyBtn?.addEventListener("click", async () => {
     }
 });
 
-// Card Payment Initiation
+// 3. Card Payment Initiation
 payDebitCardBtn?.addEventListener("click", () => handleCardPay("debit", "Debit Card"));
 payCreditCardBtn?.addEventListener("click", () => handleCardPay("credit", "Credit Card"));
 
@@ -1557,7 +1702,7 @@ bankOtpSubmitBtn?.addEventListener("click", async () => {
     }
 });
 
-// Finalize Verified Order & Send Owner WhatsApp Alert
+// Finalize Verified Order & Send Automated Owner WhatsApp Alert
 async function finalizeVerifiedOrder(orderRecord) {
     const paymentBadge = [
         "ðŸŸ¢ PAYMENT STATUS: VERIFIED & PAID",
@@ -1600,7 +1745,7 @@ async function finalizeVerifiedOrder(orderRecord) {
         console.warn(e);
     }
 
-    // Submit to serverless order API
+    // Submit to serverless order API (triggers automated server WhatsApp to owner +91 9515372424)
     try {
         await fetch("/api/order", {
             method: "POST",
@@ -1611,7 +1756,7 @@ async function finalizeVerifiedOrder(orderRecord) {
         console.warn("API offline fallback:", apiErr);
     }
 
-    // Trigger WhatsApp message directly to Bakery Owner (+91 9515372424)
+    // Direct WhatsApp message browser fallback
     const waUrl = `https://api.whatsapp.com/send?phone=${OWNER_PHONE}&text=${encodeURIComponent(messageText)}`;
     try {
         window.open(waUrl, "_blank");
