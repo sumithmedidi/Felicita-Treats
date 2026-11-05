@@ -49,9 +49,10 @@ module.exports = async (req, res) => {
       notes,
       paymentMethod,
       paymentDetails: {
-        methodName: paymentMethod === "card" ? "Debit / Credit Card" : "UPI / QR Code",
+        methodName: cleanString(paymentDetails.methodName, 60) || (paymentMethod === "card" ? "Debit / Credit Card" : "UPI"),
         utr: cleanString(paymentDetails.utr, 40),
-        status: "Paid"
+        gatewayTxnId: cleanString(paymentDetails.gatewayTxnId, 60),
+        status: cleanString(paymentDetails.status, 40) || (paymentDetails.gatewayTxnId ? "Verified & Paid" : "Pending Verification")
       },
       items: items.map(item => ({
         name: cleanString(item.name, 100),

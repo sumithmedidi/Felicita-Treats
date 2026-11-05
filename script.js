@@ -671,22 +671,52 @@ const summaryCustomerPhone = document.getElementById("summaryCustomerPhone");
 const summaryCustomerAddress = document.getElementById("summaryCustomerAddress");
 const summaryCustomerSlot = document.getElementById("summaryCustomerSlot");
 
-// Payment Elements
-const placeOrderBtn = document.getElementById("placeOrderBtn");
-const placeOrderBtnText = document.getElementById("placeOrderBtnText");
+// Payment Selection & Views
 const paymentCards = document.querySelectorAll(".payment-card");
 const upiPaymentView = document.getElementById("upiPaymentView");
-const cardPaymentView = document.getElementById("cardPaymentView");
+const debitCardPaymentView = document.getElementById("debitCardPaymentView");
+const creditCardPaymentView = document.getElementById("creditCardPaymentView");
+const upiAmountText = document.getElementById("upiAmountText");
 const copyUpiBtn = document.getElementById("copyUpiBtn");
-const upiIntentBtn = document.getElementById("upiIntentBtn");
-const customerUtr = document.getElementById("customerUtr");
-const utrCountPill = document.getElementById("utrCountPill");
-const utrValidCheck = document.getElementById("utrValidCheck");
-const utrError = document.getElementById("utrError");
-const cardNumber = document.getElementById("cardNumber");
-const cardExpiry = document.getElementById("cardExpiry");
-const cardCvv = document.getElementById("cardCvv");
-const cardHolder = document.getElementById("cardHolder");
+
+// UPI 1-Click Redirect Action Buttons
+const payViaGPayBtn = document.getElementById("payViaGPayBtn");
+const payViaPhonePeBtn = document.getElementById("payViaPhonePeBtn");
+const payViaPaytmBtn = document.getElementById("payViaPaytmBtn");
+const payViaGenericUpiBtn = document.getElementById("payViaGenericUpiBtn");
+
+// Debit Card Form Elements
+const debitCardNumber = document.getElementById("debitCardNumber");
+const debitCardExpiry = document.getElementById("debitCardExpiry");
+const debitCardCvv = document.getElementById("debitCardCvv");
+const debitCardHolder = document.getElementById("debitCardHolder");
+const debitCardError = document.getElementById("debitCardError");
+const payDebitCardBtn = document.getElementById("payDebitCardBtn");
+
+// Credit Card Form Elements
+const creditCardNumber = document.getElementById("creditCardNumber");
+const creditCardExpiry = document.getElementById("creditCardExpiry");
+const creditCardCvv = document.getElementById("creditCardCvv");
+const creditCardHolder = document.getElementById("creditCardHolder");
+const creditCardError = document.getElementById("creditCardError");
+const payCreditCardBtn = document.getElementById("payCreditCardBtn");
+
+// Payment Gateway Verification Modal Elements
+const gatewayVerifyModal = document.getElementById("gatewayVerifyModal");
+const gatewayCancelXBtn = document.getElementById("gatewayCancelXBtn");
+const gatewayCancelPaymentBtn = document.getElementById("gatewayCancelPaymentBtn");
+const gatewayPayableAmount = document.getElementById("gatewayPayableAmount");
+const gatewayAppTitle = document.getElementById("gatewayAppTitle");
+const gatewayPromptAmount = document.getElementById("gatewayPromptAmount");
+const gatewayStatusHeadline = document.getElementById("gatewayStatusHeadline");
+const gatewayStatusSub = document.getElementById("gatewayStatusSub");
+const gatewayTimerCount = document.getElementById("gatewayTimerCount");
+const gatewayUtrInput = document.getElementById("gatewayUtrInput");
+const gatewayUtrCount = document.getElementById("gatewayUtrCount");
+const gatewayErrorMsg = document.getElementById("gatewayErrorMsg");
+const gatewayConfirmVerifyBtn = document.getElementById("gatewayConfirmVerifyBtn");
+const gatewaySpinner = document.getElementById("gatewaySpinner");
+const gatewayVerifyBtnLabel = document.getElementById("gatewayVerifyBtnLabel");
 
 // Bank 3D-Secure Modal Elements
 const bankOtpBackdrop = document.getElementById("bankOtpBackdrop");
@@ -704,6 +734,10 @@ const bankAuthSpinner = document.getElementById("bankAuthSpinner");
 const bankSubmitBtnLabel = document.getElementById("bankSubmitBtnLabel");
 
 let currentCheckoutStep = 1;
+let selectedPaymentMethod = "upi";
+let activeGatewayApp = "Google Pay";
+let activeGatewayMethod = "gpay";
+let gatewayTimerInterval = null;
 let bankTimerInterval = null;
 let pendingOrderPayload = null;
 
@@ -1165,27 +1199,19 @@ function updatePaymentUI() {
     });
 
     if (upiPaymentView) upiPaymentView.classList.toggle("is-hidden", selectedPaymentMethod !== "upi");
-    if (cardPaymentView) cardPaymentView.classList.toggle("is-hidden", selectedPaymentMethod !== "card");
+    if (debitCardPaymentView) debitCardPaymentView.classList.toggle("is-hidden", selectedPaymentMethod !== "debit");
+    if (creditCardPaymentView) creditCardPaymentView.classList.toggle("is-hidden", selectedPaymentMethod !== "credit");
 
     const total = totalCartValue();
-    if (placeOrderBtnText && !isSubmitting) {
-        if (selectedPaymentMethod === "upi") {
-            placeOrderBtnText.textContent = `Verify UTR & Place Order (${formatPrice(total)})`;
-        } else {
-            placeOrderBtnText.textContent = `Proceed to Bank 3DS OTP (${formatPrice(total)})`;
-        }
+    if (upiAmountText) upiAmountText.textContent = Number(total).toLocaleString("en-IN");
+    if (checkoutSubtotal) checkoutSubtotal.textContent = formatPrice(total);
+    if (checkoutTotal) checkoutTotal.textContent = formatPrice(total);
+
+    if (payDebitCardBtn) {
+        payDebitCardBtn.querySelector("span").textContent = `Pay ${formatPrice(total)} via Debit Card (3DS Secure)`;
     }
-
-    const tempOrderId = `FT-${Date.now().toString().slice(-6)}`;
-    const upiPayload = `upi://pay?pa=${OFFICIAL_UPI_ID}&pn=${encodeURIComponent(OFFICIAL_UPI_NAME)}&am=${total}&cu=INR&tn=Order%20${tempOrderId}`;
-
-    if (upiIntentBtn) {
-        upiIntentBtn.href = upiPayload;
-    }
-
-    const upiQrCodeImg = document.getElementById("upiQrCodeImg");
-    if (upiQrCodeImg) {
-        upiQrCodeImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiPayload)}&margin=4`;
+    if (payCreditCardBtn) {
+        payCreditCardBtn.querySelector("span").textContent = `Pay ${formatPrice(total)} via Credit Card (3DS Secure)`;
     }
 }
 
@@ -1211,61 +1237,312 @@ copyUpiBtn?.addEventListener("click", async () => {
     }
 });
 
-// Real-time UTR Validation & Counter
-customerUtr?.addEventListener("input", e => {
+// Card input auto-formatters
+[debitCardNumber, creditCardNumber].forEach(input => {
+    input?.addEventListener("input", e => {
+        let val = e.target.value.replace(/\D/g, "").slice(0, 16);
+        e.target.value = val.replace(/(\d{4})(?=\d)/g, "$1 ");
+    });
+});
+
+[debitCardExpiry, creditCardExpiry].forEach(input => {
+    input?.addEventListener("input", e => {
+        let val = e.target.value.replace(/\D/g, "").slice(0, 4);
+        if (val.length >= 2) {
+            e.target.value = val.slice(0, 2) + "/" + val.slice(2);
+        } else {
+            e.target.value = val;
+        }
+    });
+});
+
+[debitCardCvv, creditCardCvv].forEach(input => {
+    input?.addEventListener("input", e => {
+        e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
+    });
+});
+
+// =========================================================
+// UPI 1-CLICK REDIRECT & LIVE PAYMENT GATEWAY VERIFICATION
+// =========================================================
+
+function buildOrderPayload(paymentMethodKey, methodName) {
+    const name = customerName?.value.trim() || "";
+    const phone = customerPhone?.value.replace(/\D/g, "") || "";
+    const address = customerAddress?.value.trim() || "";
+    const notes = customerNotes?.value.trim() || "";
+    const date = deliveryDate?.value || "";
+    const time = deliveryTime?.value || "Evening (05:00 PM – 08:30 PM)";
+    const total = totalCartValue();
+    const orderId = `FT-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    return {
+        orderId,
+        name,
+        phone,
+        address,
+        deliveryDate: date,
+        deliveryTime: time,
+        notes,
+        status: "received",
+        paymentMethod: paymentMethodKey,
+        paymentDetails: {
+            methodName: methodName,
+            status: "Pending Verification"
+        },
+        items: cart.map(item => ({ ...item })),
+        total,
+        createdAt: new Date().toISOString()
+    };
+}
+
+function initiateUpiAppPayment(appName, methodKey) {
+    if (!validateStep1()) {
+        goToStep(1);
+        return;
+    }
+    if (!cart.length) {
+        showToast("Your cart is empty");
+        return;
+    }
+
+    const total = totalCartValue();
+    const order = buildOrderPayload(methodKey, `${appName} (UPI)`);
+    activeGatewayOrder = order;
+    activeGatewayApp = appName;
+    activeGatewayMethod = methodKey;
+
+    // Build specific deep link based on app
+    let deepLink = `upi://pay?pa=${OFFICIAL_UPI_ID}&pn=${encodeURIComponent(OFFICIAL_UPI_NAME)}&am=${total}&cu=INR&tn=${encodeURIComponent(`Order ${order.orderId}`)}`;
+    if (methodKey === "phonepe") {
+        deepLink = `phonepe://pay?pa=${OFFICIAL_UPI_ID}&pn=${encodeURIComponent(OFFICIAL_UPI_NAME)}&am=${total}&cu=INR&tn=${encodeURIComponent(`Order ${order.orderId}`)}`;
+    } else if (methodKey === "paytm") {
+        deepLink = `paytmmp://pay?pa=${OFFICIAL_UPI_ID}&pn=${encodeURIComponent(OFFICIAL_UPI_NAME)}&am=${total}&cu=INR&tn=${encodeURIComponent(`Order ${order.orderId}`)}`;
+    }
+
+    // Attempt direct mobile redirect to UPI app
+    try {
+        window.location.href = deepLink;
+    } catch (e) {
+        console.log("App redirect triggered", e);
+    }
+
+    // Launch Gateway Verification Chamber
+    if (gatewayPayableAmount) gatewayPayableAmount.textContent = formatPrice(total);
+    if (gatewayPromptAmount) gatewayPromptAmount.textContent = formatPrice(total);
+    if (gatewayAppTitle) gatewayAppTitle.textContent = appName;
+    if (gatewayStatusHeadline) gatewayStatusHeadline.textContent = `Redirected to ${appName}...`;
+    if (gatewayStatusSub) gatewayStatusSub.textContent = `Please approve the transfer of ${formatPrice(total)} in ${appName}.`;
+
+    if (gatewayUtrInput) gatewayUtrInput.value = "";
+    if (gatewayUtrCount) gatewayUtrCount.textContent = "0 / 12";
+    if (gatewayErrorMsg) {
+        gatewayErrorMsg.textContent = "";
+        gatewayErrorMsg.classList.remove("visible");
+    }
+
+    // Start 5-minute gateway verification countdown
+    let timeLeft = 299; // 5 minutes
+    clearInterval(gatewayTimerInterval);
+    gatewayTimerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(gatewayTimerInterval);
+            if (gatewayTimerCount) gatewayTimerCount.textContent = "00:00 (Expired)";
+            if (gatewayErrorMsg) {
+                gatewayErrorMsg.textContent = "Gateway session expired. Please restart payment.";
+                gatewayErrorMsg.classList.add("visible");
+            }
+        } else {
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            if (gatewayTimerCount) gatewayTimerCount.textContent = `0${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+    }, 1000);
+
+    gatewayVerifyModal?.classList.add("open");
+    gatewayVerifyModal?.setAttribute("aria-hidden", "false");
+}
+
+payViaGPayBtn?.addEventListener("click", () => initiateUpiAppPayment("Google Pay", "gpay"));
+payViaPhonePeBtn?.addEventListener("click", () => initiateUpiAppPayment("PhonePe", "phonepe"));
+payViaPaytmBtn?.addEventListener("click", () => initiateUpiAppPayment("Paytm UPI", "paytm"));
+payViaGenericUpiBtn?.addEventListener("click", () => initiateUpiAppPayment("UPI App", "upi"));
+
+// Real-time UTR Counter in Gateway Chamber
+gatewayUtrInput?.addEventListener("input", e => {
     let val = e.target.value.replace(/\D/g, "").slice(0, 12);
     e.target.value = val;
-
-    if (utrCountPill) {
-        utrCountPill.textContent = `${val.length} / 12 digits`;
-        utrCountPill.classList.toggle("is-valid", val.length === 12);
-    }
-    if (customerUtr) {
-        customerUtr.classList.toggle("is-valid", val.length === 12);
-    }
-    if (utrValidCheck) {
-        utrValidCheck.classList.toggle("is-visible", val.length === 12);
-    }
-    if (val.length === 12 && utrError) {
-        utrError.textContent = "";
-        utrError.classList.remove("visible");
+    if (gatewayUtrCount) gatewayUtrCount.textContent = `${val.length} / 12`;
+    if (val.length === 12 && gatewayErrorMsg) {
+        gatewayErrorMsg.textContent = "";
+        gatewayErrorMsg.classList.remove("visible");
     }
 });
 
-customerUtr?.addEventListener("blur", () => {
-    const val = customerUtr.value.trim();
-    if (val && val.length !== 12 && utrError) {
-        utrError.textContent = "UPI UTR must be exactly 12 numeric digits";
-        utrError.classList.add("visible");
+function closeGatewayModal() {
+    clearInterval(gatewayTimerInterval);
+    gatewayVerifyModal?.classList.remove("open");
+    gatewayVerifyModal?.setAttribute("aria-hidden", "true");
+    activeGatewayOrder = null;
+}
+
+gatewayCancelXBtn?.addEventListener("click", () => {
+    closeGatewayModal();
+    showToast("Payment cancelled. Order was not placed.");
+});
+
+gatewayCancelPaymentBtn?.addEventListener("click", () => {
+    closeGatewayModal();
+    showToast("Payment cancelled. No money was deducted.");
+});
+
+// Gateway Bank Verification Submit
+gatewayConfirmVerifyBtn?.addEventListener("click", async () => {
+    if (!activeGatewayOrder) {
+        showToast("Session expired. Please restart checkout.");
+        closeGatewayModal();
+        return;
+    }
+
+    const utr = gatewayUtrInput?.value.replace(/\D/g, "") || "";
+    if (utr.length !== 12) {
+        if (gatewayErrorMsg) {
+            gatewayErrorMsg.textContent = "Please enter the valid 12-digit Bank Reference / UTR Number from your payment receipt.";
+            gatewayErrorMsg.classList.add("visible");
+        }
+        gatewayUtrInput?.focus();
+        return;
+    }
+
+    if (gatewayErrorMsg) {
+        gatewayErrorMsg.textContent = "";
+        gatewayErrorMsg.classList.remove("visible");
+    }
+
+    gatewayConfirmVerifyBtn.disabled = true;
+    gatewaySpinner?.classList.add("is-spinning");
+    if (gatewayVerifyBtnLabel) gatewayVerifyBtnLabel.textContent = "Verifying Bank Settlement...";
+
+    try {
+        const verifyRes = await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                orderId: activeGatewayOrder.orderId,
+                amount: activeGatewayOrder.total,
+                paymentMethod: activeGatewayMethod,
+                utr: utr
+            })
+        });
+
+        const verifyData = await verifyRes.json();
+        if (!verifyData.ok || !verifyData.verified) {
+            if (gatewayErrorMsg) {
+                gatewayErrorMsg.textContent = `❌ Verification Failed: ${verifyData.error || "No matching bank settlement found. Please complete transfer in your app first."}`;
+                gatewayErrorMsg.classList.add("visible");
+            }
+            return;
+        }
+
+        // VERIFIED! Update order with confirmed status and gateway transaction ID
+        activeGatewayOrder.paymentMethod = activeGatewayMethod;
+        activeGatewayOrder.paymentDetails = {
+            methodName: `${activeGatewayApp} (Verified Gateway)`,
+            utr: utr,
+            gatewayTxnId: verifyData.gatewayTxnId,
+            status: "Verified & Paid"
+        };
+
+        const finalOrder = activeGatewayOrder;
+        closeGatewayModal();
+        await finalizeOrderSubmission(finalOrder);
+    } catch (err) {
+        console.error("Gateway verification error:", err);
+        if (gatewayErrorMsg) {
+            gatewayErrorMsg.textContent = "Unable to reach verification server. Please verify your internet connection.";
+            gatewayErrorMsg.classList.add("visible");
+        }
+    } finally {
+        gatewayConfirmVerifyBtn.disabled = false;
+        gatewaySpinner?.classList.remove("is-spinning");
+        if (gatewayVerifyBtnLabel) gatewayVerifyBtnLabel.textContent = "Verify Payment & Confirm Order";
     }
 });
 
-// Card input auto-formatters & validation
-cardNumber?.addEventListener("input", e => {
-    let val = e.target.value.replace(/\D/g, "").slice(0, 16);
-    e.target.value = val.replace(/(\d{4})(?=\d)/g, "$1 ");
-    if (val.length >= 15 && cardError) {
-        cardError.textContent = "";
-        cardError.classList.remove("visible");
+// =========================================================
+// DEBIT & CREDIT CARD 3D-SECURE GATEWAY
+// =========================================================
+
+payDebitCardBtn?.addEventListener("click", () => {
+    if (!validateStep1()) {
+        goToStep(1);
+        return;
     }
-});
+    const rawCard = debitCardNumber?.value.replace(/\s/g, "") || "";
+    const expiry = debitCardExpiry?.value.trim() || "";
+    const cvv = debitCardCvv?.value.trim() || "";
+    const holder = debitCardHolder?.value.trim() || "";
 
-cardExpiry?.addEventListener("input", e => {
-    let val = e.target.value.replace(/\D/g, "").slice(0, 4);
-    if (val.length >= 2) {
-        e.target.value = val.slice(0, 2) + "/" + val.slice(2);
-    } else {
-        e.target.value = val;
+    if (rawCard.length < 15 || expiry.length < 4 || cvv.length < 3 || !holder) {
+        if (debitCardError) {
+            debitCardError.textContent = "Please fill in complete debit card details (16-digit number, MM/YY, CVV, Name).";
+            debitCardError.classList.add("visible");
+        }
+        debitCardNumber?.focus();
+        showToast("Please enter complete debit card details");
+        return;
     }
+
+    if (debitCardError) {
+        debitCardError.textContent = "";
+        debitCardError.classList.remove("visible");
+    }
+
+    const cardLast4 = rawCard.slice(-4);
+    const order = buildOrderPayload("debit_card", "Debit Card (3DS Secure)");
+    order.paymentDetails.cardEnding = `•••• ${cardLast4}`;
+    order.paymentDetails.cardHolder = holder;
+    openBankOtpModal(order, cardLast4, "debit");
 });
 
-cardCvv?.addEventListener("input", e => {
-    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
+payCreditCardBtn?.addEventListener("click", () => {
+    if (!validateStep1()) {
+        goToStep(1);
+        return;
+    }
+    const rawCard = creditCardNumber?.value.replace(/\s/g, "") || "";
+    const expiry = creditCardExpiry?.value.trim() || "";
+    const cvv = creditCardCvv?.value.trim() || "";
+    const holder = creditCardHolder?.value.trim() || "";
+
+    if (rawCard.length < 15 || expiry.length < 4 || cvv.length < 3 || !holder) {
+        if (creditCardError) {
+            creditCardError.textContent = "Please fill in complete credit card details (16-digit number, MM/YY, CVV, Name).";
+            creditCardError.classList.add("visible");
+        }
+        creditCardNumber?.focus();
+        showToast("Please enter complete credit card details");
+        return;
+    }
+
+    if (creditCardError) {
+        creditCardError.textContent = "";
+        creditCardError.classList.remove("visible");
+    }
+
+    const cardLast4 = rawCard.slice(-4);
+    const order = buildOrderPayload("credit_card", "Credit Card (3DS Secure)");
+    order.paymentDetails.cardEnding = `•••• ${cardLast4}`;
+    order.paymentDetails.cardHolder = holder;
+    openBankOtpModal(order, cardLast4, "credit");
 });
 
-// 3D-Secure Bank OTP Modal Handlers
-function openBankOtpModal(orderPayload, cardLast4) {
+// Bank 3D-Secure Modal Handlers
+let activeCardType = "debit";
+function openBankOtpModal(orderPayload, cardLast4, cardType) {
     pendingOrderPayload = orderPayload;
+    activeCardType = cardType || "debit";
     if (bankAuthAmount) bankAuthAmount.textContent = formatPrice(orderPayload.total);
     if (bankAuthCardNumber) bankAuthCardNumber.textContent = `•••• •••• •••• ${cardLast4}`;
     if (bankOtpInput) bankOtpInput.value = "";
@@ -1302,8 +1579,15 @@ function closeBankOtpModal() {
     pendingOrderPayload = null;
 }
 
-bankCloseBtn?.addEventListener("click", closeBankOtpModal);
-bankOtpCancelBtn?.addEventListener("click", closeBankOtpModal);
+bankCloseBtn?.addEventListener("click", () => {
+    closeBankOtpModal();
+    showToast("Card payment cancelled. No money was charged.");
+});
+
+bankOtpCancelBtn?.addEventListener("click", () => {
+    closeBankOtpModal();
+    showToast("Card authorization cancelled. Order was not placed.");
+});
 
 bankResendBtn?.addEventListener("click", () => {
     showToast("New OTP sent to mobile ending in •••• 8421 (Demo: 123456)");
@@ -1322,7 +1606,7 @@ bankResendBtn?.addEventListener("click", () => {
     }, 1000);
 });
 
-bankOtpSubmitBtn?.addEventListener("click", () => {
+bankOtpSubmitBtn?.addEventListener("click", async () => {
     const otp = bankOtpInput?.value.replace(/\D/g, "") || "";
     if (otp.length !== 6) {
         if (bankOtpError) {
@@ -1342,18 +1626,45 @@ bankOtpSubmitBtn?.addEventListener("click", () => {
     bankAuthSpinner?.classList.add("is-spinning");
     if (bankSubmitBtnLabel) bankSubmitBtnLabel.textContent = "Authorizing with Issuing Bank...";
 
-    setTimeout(async () => {
-        bankOtpSubmitBtn.disabled = false;
-        bankAuthSpinner?.classList.remove("is-spinning");
-        if (bankSubmitBtnLabel) bankSubmitBtnLabel.textContent = "Authorize & Pay";
+    try {
+        const verifyRes = await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                orderId: pendingOrderPayload.orderId,
+                amount: pendingOrderPayload.total,
+                paymentMethod: activeCardType,
+                otp: otp
+            })
+        });
+
+        const verifyData = await verifyRes.json();
+        if (!verifyData.ok || !verifyData.verified) {
+            if (bankOtpError) {
+                bankOtpError.textContent = `❌ ${verifyData.error || "Card authentication declined by issuing bank."}`;
+                bankOtpError.classList.add("visible");
+            }
+            return;
+        }
 
         const order = pendingOrderPayload;
-        closeBankOtpModal();
+        order.paymentDetails.status = "Verified & Paid";
+        order.paymentDetails.gatewayTxnId = verifyData.gatewayTxnId;
 
+        closeBankOtpModal();
         if (order) {
             await finalizeOrderSubmission(order);
         }
-    }, 1200);
+    } catch (err) {
+        if (bankOtpError) {
+            bankOtpError.textContent = "Bank authorization connection error. Please try again.";
+            bankOtpError.classList.add("visible");
+        }
+    } finally {
+        bankOtpSubmitBtn.disabled = false;
+        bankAuthSpinner?.classList.remove("is-spinning");
+        if (bankSubmitBtnLabel) bankSubmitBtnLabel.textContent = "Authorize & Pay";
+    }
 });
 
 function openCheckout() {
@@ -1613,18 +1924,12 @@ function openOrderSuccess(orderRecord) {
 
     const banner = document.getElementById("successStatusBanner");
     if (successPaymentStatus) {
-        if (orderRecord.paymentMethod === "card") {
-            if (banner) {
-                banner.className = "receipt-status-banner is-verified";
-            }
-            successPaymentStatus.textContent = `● 3D-Secure Authorized & Paid (${formatPrice(orderRecord.total)})`;
-        } else {
-            if (banner) {
-                banner.className = "receipt-status-banner is-pending";
-            }
-            const utr = orderRecord.paymentDetails?.utr || "—";
-            successPaymentStatus.textContent = `● Payment Verification Pending (UTR: ${utr})`;
+        if (banner) {
+            banner.className = "receipt-status-banner is-verified";
         }
+        const method = orderRecord.paymentDetails?.methodName || "Verified Gateway";
+        const txn = orderRecord.paymentDetails?.gatewayTxnId || orderRecord.paymentDetails?.utr || "CONFIRMED";
+        successPaymentStatus.textContent = `● Payment Verified & Paid via ${method} (Ref: ${txn})`;
     }
 
     if (successItemsTable) {
@@ -1665,17 +1970,19 @@ function closeOrderSuccess() {
 }
 
 async function finalizeOrderSubmission(orderRecord) {
-    const isUpi = orderRecord.paymentMethod === "upi";
-    const paymentStatusBadge = isUpi 
-        ? `🟡 AWAITING UTR VERIFICATION\n🔢 UTR Reference: ${orderRecord.paymentDetails?.utr || 'N/A'}\n👉 Please verify ₹${orderRecord.total} credit to 9059499756@axl` 
-        : `🟢 3D-SECURE AUTHORIZED & PAID\n💳 Card: ${orderRecord.paymentDetails?.cardEnding || 'Verified'}`;
+    const paymentStatusBadge = [
+        "🟢 PAYMENT STATUS: VERIFIED & PAID VIA GATEWAY",
+        `💳 Gateway Method: ${orderRecord.paymentDetails?.methodName || 'Online Gateway'}`,
+        `🔢 Transaction ID: ${orderRecord.paymentDetails?.gatewayTxnId || 'VERIFIED'}`,
+        orderRecord.paymentDetails?.utr ? `🔢 Bank UTR: ${orderRecord.paymentDetails.utr}` : "",
+        `💰 Amount Verified: ${formatPrice(orderRecord.total)}`
+    ].filter(Boolean).join("\n");
 
     latestOrderText = [
         "🍰 FELICITA TREATS — VISAKHAPATNAM",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         `🆕 NEW ORDER #${orderRecord.orderId}`,
         "",
-        "💰 PAYMENT VERIFICATION:",
         paymentStatusBadge,
         "",
         "👤 CUSTOMER DETAILS:",
@@ -1690,7 +1997,7 @@ async function finalizeOrderSubmission(orderRecord) {
         "",
         `💵 TOTAL AMOUNT: ${formatPrice(orderRecord.total)}`,
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        "🌐 Placed via Felicita Treats Official Portal"
+        "🌐 Verified Online Order via Felicita Treats"
     ].filter(Boolean).join("\n");
 
     orderRecord.message = latestOrderText;
@@ -1740,132 +2047,8 @@ async function finalizeOrderSubmission(orderRecord) {
     closeCheckout();
     openOrderSuccess(orderRecord);
 
-    const toastMsg = isUpi 
-        ? `Order #${orderRecord.orderId} submitted! We are verifying your UTR.` 
-        : `Order #${orderRecord.orderId} paid and confirmed! 🎉`;
-    showToast(toastMsg);
+    showToast(`Payment verified! Order #${orderRecord.orderId} confirmed 🎉`);
 }
-
-placeOrderBtn.addEventListener("click", async () => {
-    if (isSubmitting) return;
-
-    if (currentCheckoutStep !== 2) {
-        goToStep(2);
-        return;
-    }
-
-    if (!cart.length) {
-        showToast("Your cart is empty");
-        closeCheckout();
-        return;
-    }
-
-    const name = customerName?.value.trim() || "";
-    const phone = customerPhone?.value.replace(/\D/g, "") || "";
-    const address = customerAddress?.value.trim() || "";
-    const notes = customerNotes?.value.trim() || "";
-    const date = deliveryDate?.value || "";
-    const time = deliveryTime?.value || "Evening (05:00 PM – 08:30 PM)";
-    const total = totalCartValue();
-    const orderId = `FT-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    if (selectedPaymentMethod === "upi") {
-        const utrVal = customerUtr?.value.replace(/\D/g, "") || "";
-        if (utrVal.length !== 12) {
-            if (utrError) {
-                utrError.textContent = "Please enter the mandatory 12-digit UPI UTR number from your payment receipt";
-                utrError.classList.add("visible");
-            }
-            customerUtr?.focus();
-            showToast("Enter 12-digit UTR to verify payment");
-            return;
-        }
-
-        if (utrError) {
-            utrError.textContent = "";
-            utrError.classList.remove("visible");
-        }
-
-        const orderRecord = {
-            orderId,
-            name,
-            phone,
-            address,
-            deliveryDate: date,
-            deliveryTime: time,
-            notes,
-            status: "received",
-            paymentMethod: "upi",
-            paymentDetails: {
-                methodName: "UPI / QR Code",
-                utr: utrVal,
-                status: "Verification Pending"
-            },
-            items: cart.map(item => ({ ...item })),
-            total,
-            createdAt: new Date().toISOString()
-        };
-
-        isSubmitting = true;
-        placeOrderBtn.disabled = true;
-        btnSpinner?.classList.add("is-spinning");
-        if (placeOrderBtnText) placeOrderBtnText.textContent = "Verifying UTR...";
-
-        try {
-            await finalizeOrderSubmission(orderRecord);
-        } finally {
-            isSubmitting = false;
-            placeOrderBtn.disabled = false;
-            btnSpinner?.classList.remove("is-spinning");
-            updatePaymentUI();
-        }
-    } else {
-        // Debit / Credit Card
-        const rawCard = cardNumber?.value.replace(/\s/g, "") || "";
-        const expiry = cardExpiry?.value.trim() || "";
-        const cvv = cardCvv?.value.trim() || "";
-        const holder = cardHolder?.value.trim() || "";
-
-        if (rawCard.length < 15 || expiry.length < 4 || cvv.length < 3 || !holder) {
-            if (cardError) {
-                cardError.textContent = "Please enter complete card details (number, MM/YY, CVV, name)";
-                cardError.classList.add("visible");
-            }
-            cardNumber?.focus();
-            showToast("Please enter complete card details");
-            return;
-        }
-
-        if (cardError) {
-            cardError.textContent = "";
-            cardError.classList.remove("visible");
-        }
-
-        const cardLast4 = rawCard.slice(-4);
-        const orderRecord = {
-            orderId,
-            name,
-            phone,
-            address,
-            deliveryDate: date,
-            deliveryTime: time,
-            notes,
-            status: "received",
-            paymentMethod: "card",
-            paymentDetails: {
-                methodName: "Debit / Credit Card (3DS)",
-                cardEnding: `•••• ${cardLast4}`,
-                cardHolder: holder,
-                status: "Authorized & Paid"
-            },
-            items: cart.map(item => ({ ...item })),
-            total,
-            createdAt: new Date().toISOString()
-        };
-
-        openBankOtpModal(orderRecord, cardLast4);
-    }
-});
 
 printReceiptBtn?.addEventListener("click", () => {
     window.print();

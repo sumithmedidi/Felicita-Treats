@@ -51,7 +51,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
 
     <!-- STYLES -->
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2.2.0">
+
+    <!-- RAZORPAY CHECKOUT SDK (OPTIONAL GATEWAY) -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <!-- STRUCTURED DATA (JSON-LD) -->
     <script type="application/ld+json">
@@ -2594,31 +2597,44 @@
 
                 <!-- Select Payment Method -->
                 <div class="checkout-section-header">
-                    <span>Select Payment Method</span>
+                    <span>Select Payment Gateway</span>
                 </div>
                 <div class="payment-methods" id="paymentMethods" role="radiogroup" aria-label="Payment Method">
-                    <!-- UPI Option -->
+                    <!-- UPI Direct Apps Option -->
                     <label class="payment-card is-selected" data-method="upi">
                         <input type="radio" name="paymentOption" value="upi" checked>
                         <div class="payment-card-body">
                             <div class="payment-card-top">
-                                <span class="pay-method-pill">⚡ 0% Fee</span>
-                                <strong>UPI / QR Code</strong>
+                                <span class="pay-method-pill">⚡ 1-Click Redirect</span>
+                                <strong>UPI Direct Apps</strong>
                             </div>
-                            <p>GPay, PhonePe, Paytm, BHIM, CRED (UTR Verification Required)</p>
+                            <p>Google Pay, PhonePe, Paytm, BHIM (Direct App Opening)</p>
                         </div>
                         <div class="payment-radio-mark" aria-hidden="true">✓</div>
                     </label>
 
-                    <!-- Card Option -->
-                    <label class="payment-card" data-method="card">
-                        <input type="radio" name="paymentOption" value="card">
+                    <!-- Debit Card Option -->
+                    <label class="payment-card" data-method="debit">
+                        <input type="radio" name="paymentOption" value="debit">
                         <div class="payment-card-body">
                             <div class="payment-card-top">
-                                <span class="pay-method-pill">3DS Verified</span>
-                                <strong>Debit / Credit Card</strong>
+                                <span class="pay-method-pill">Debit</span>
+                                <strong>Debit Card</strong>
                             </div>
-                            <p>Visa, MasterCard, RuPay (Bank OTP Verification)</p>
+                            <p>Visa, MasterCard, RuPay Debit (Bank 3D-Secure)</p>
+                        </div>
+                        <div class="payment-radio-mark" aria-hidden="true">✓</div>
+                    </label>
+
+                    <!-- Credit Card Option -->
+                    <label class="payment-card" data-method="credit">
+                        <input type="radio" name="paymentOption" value="credit">
+                        <div class="payment-card-body">
+                            <div class="payment-card-top">
+                                <span class="pay-method-pill">Credit</span>
+                                <strong>Credit Card</strong>
+                            </div>
+                            <p>Visa, MasterCard, RuPay, Amex (Bank 3D-Secure)</p>
                         </div>
                         <div class="payment-radio-mark" aria-hidden="true">✓</div>
                     </label>
@@ -2626,94 +2642,135 @@
 
                 <!-- Dynamic Payment Views -->
                 <div class="payment-details-box" id="paymentDetailsBox">
-                    <!-- UPI View -->
+                    <!-- UPI Direct View (NO SCANNERS - 1-Click App Redirection) -->
                     <div class="payment-view" id="upiPaymentView">
-                        <div class="upi-pay-card">
-                            <div class="upi-qr-card">
-                                <div class="upi-qr-frame">
-                                    <img
-                                        id="upiQrCodeImg"
-                                        src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&amp;data=upi%3A%2F%2Fpay%3Fpa%3D9059499756%40axl%26pn%3DFelicita%2520Treats%26cu%3DINR"
-                                        width="120"
-                                        height="120"
-                                        alt="Scan to pay 9059499756@axl via UPI"
-                                        style="display: block; border-radius: 8px; object-fit: contain;"
-                                    >
-                                </div>
-                                <span class="upi-qr-instruction">Scan with any UPI app to pay</span>
-                            </div>
-
-                            <div class="upi-meta">
-                                <div class="upi-id-pill">
-                                    <div>
-                                        <small>Official Bakery UPI ID</small>
-                                        <strong id="upiVpaValue">9059499756@axl</strong>
-                                    </div>
-                                    <button type="button" class="copy-pill-btn" id="copyUpiBtn">Copy ID</button>
-                                </div>
-
-                                <a href="#" class="upi-direct-app-btn" id="upiIntentBtn" target="_blank">
-                                    📱 Open in UPI App (GPay / PhonePe)
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- MANDATORY UPI UTR INPUT -->
-                        <div class="utr-required-block">
-                            <div class="utr-title-row">
-                                <label for="customerUtr" class="utr-title-label">
-                                    <span>UPI Reference / UTR Number *</span>
-                                    <span class="required-flag">REQUIRED</span>
-                                </label>
-                                <span class="utr-counter-badge" id="utrCountPill">0 / 12 digits</span>
-                            </div>
-                            <div class="utr-input-wrapper">
-                                <input
-                                    id="customerUtr"
-                                    type="text"
-                                    inputmode="numeric"
-                                    placeholder="Enter 12-digit UTR from GPay / PhonePe"
-                                    maxlength="12"
-                                    autocomplete="off"
-                                    required
-                                    aria-required="true"
-                                    aria-describedby="utrHelp utrError"
-                                >
-                                <span class="utr-check-icon" id="utrValidCheck" aria-hidden="true">✓</span>
-                            </div>
-                            <p class="utr-help-text" id="utrHelp">
-                                💡 <strong>How to find UTR?</strong> After paying on GPay, PhonePe or Paytm, open the payment receipt and copy the 12-digit number labeled <em>"UPI Transaction ID"</em> or <em>"UTR"</em>. Baking begins once UTR is verified by our team.
+                        <div class="upi-redirect-header">
+                            <p class="upi-redirect-instruction">
+                                Tap your preferred UPI app to open it directly with <strong>₹<span id="upiAmountText">0</span></strong> pre-filled:
                             </p>
-                            <span class="field-error" id="utrError" role="alert" aria-live="polite"></span>
                         </div>
+
+                        <div class="upi-app-buttons-grid">
+                            <!-- Google Pay -->
+                            <button type="button" class="upi-app-action-btn gpay-action-btn" id="payViaGPayBtn">
+                                <div class="upi-app-left">
+                                    <span class="upi-app-badge gpay-badge">GPay</span>
+                                    <div class="upi-app-info">
+                                        <strong>Google Pay</strong>
+                                        <small>Instant App Redirect</small>
+                                    </div>
+                                </div>
+                                <span class="app-redirect-arrow">➔</span>
+                            </button>
+
+                            <!-- PhonePe -->
+                            <button type="button" class="upi-app-action-btn phonepe-action-btn" id="payViaPhonePeBtn">
+                                <div class="upi-app-left">
+                                    <span class="upi-app-badge phonepe-badge">पे</span>
+                                    <div class="upi-app-info">
+                                        <strong>PhonePe</strong>
+                                        <small>Instant App Redirect</small>
+                                    </div>
+                                </div>
+                                <span class="app-redirect-arrow">➔</span>
+                            </button>
+
+                            <!-- Paytm -->
+                            <button type="button" class="upi-app-action-btn paytm-action-btn" id="payViaPaytmBtn">
+                                <div class="upi-app-left">
+                                    <span class="upi-app-badge paytm-badge">Paytm</span>
+                                    <div class="upi-app-info">
+                                        <strong>Paytm UPI</strong>
+                                        <small>Instant App Redirect</small>
+                                    </div>
+                                </div>
+                                <span class="app-redirect-arrow">➔</span>
+                            </button>
+
+                            <!-- Any Other UPI App -->
+                            <button type="button" class="upi-app-action-btn generic-action-btn" id="payViaGenericUpiBtn">
+                                <div class="upi-app-left">
+                                    <span class="upi-app-badge generic-badge">UPI</span>
+                                    <div class="upi-app-info">
+                                        <strong>Any Other UPI App</strong>
+                                        <small>BHIM, CRED, Amazon Pay</small>
+                                    </div>
+                                </div>
+                                <span class="app-redirect-arrow">➔</span>
+                            </button>
+                        </div>
+
+                        <div class="upi-vpa-copy-pill">
+                            <div>
+                                <small>Bakery Official UPI ID</small>
+                                <strong id="upiVpaValue">9059499756@axl</strong>
+                            </div>
+                            <button type="button" class="copy-pill-btn" id="copyUpiBtn">Copy ID</button>
+                        </div>
+
+                        <p class="upi-flow-hint">
+                            🛡️ <strong>Payment Verification:</strong> Once you tap an app and complete the transfer, our secure gateway will verify bank receipt before confirming your order.
+                        </p>
                     </div>
 
-                    <!-- Card View -->
-                    <div class="payment-view is-hidden" id="cardPaymentView">
+                    <!-- Debit Card View -->
+                    <div class="payment-view is-hidden" id="debitCardPaymentView">
                         <div class="card-inputs-grid">
                             <label class="full-span">
-                                <span>Card Number</span>
-                                <input id="cardNumber" type="text" inputmode="numeric" placeholder="4111 2222 3333 4444" maxlength="19" aria-describedby="cardError">
+                                <span>Debit Card Number</span>
+                                <input id="debitCardNumber" type="text" inputmode="numeric" placeholder="4111 2222 3333 4444" maxlength="19" aria-describedby="debitCardError">
                             </label>
                             <label>
                                 <span>Expiry (MM/YY)</span>
-                                <input id="cardExpiry" type="text" inputmode="numeric" placeholder="MM/YY" maxlength="5">
+                                <input id="debitCardExpiry" type="text" inputmode="numeric" placeholder="MM/YY" maxlength="5">
                             </label>
                             <label>
                                 <span>CVV</span>
-                                <input id="cardCvv" type="password" inputmode="numeric" placeholder="•••" maxlength="4">
+                                <input id="debitCardCvv" type="password" inputmode="numeric" placeholder="•••" maxlength="4">
                             </label>
                             <label class="full-span">
-                                <span>Name on Card</span>
-                                <input id="cardHolder" type="text" placeholder="Cardholder's Name">
+                                <span>Name on Debit Card</span>
+                                <input id="debitCardHolder" type="text" placeholder="Cardholder's Full Name">
                             </label>
                             <div class="full-span">
-                                <span class="field-error" id="cardError" role="alert" aria-live="polite"></span>
+                                <span class="field-error" id="debitCardError" role="alert" aria-live="polite"></span>
                             </div>
                             <div class="full-span">
-                                <div class="card-security-note">
-                                    🛡️ <strong>Bank 3D-Secure 2.0 Protection:</strong> Entering card details will open your bank's secure OTP authentication window to verify and authorize your payment.
-                                </div>
+                                <button type="button" class="cart-checkout-btn direct-pay-btn" id="payDebitCardBtn">
+                                    <span>Proceed to Bank 3DS OTP</span>
+                                    <span class="btn-arrow" aria-hidden="true">➔</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Credit Card View -->
+                    <div class="payment-view is-hidden" id="creditCardPaymentView">
+                        <div class="card-inputs-grid">
+                            <label class="full-span">
+                                <span>Credit Card Number</span>
+                                <input id="creditCardNumber" type="text" inputmode="numeric" placeholder="5241 3333 4444 5555" maxlength="19" aria-describedby="creditCardError">
+                            </label>
+                            <label>
+                                <span>Expiry (MM/YY)</span>
+                                <input id="creditCardExpiry" type="text" inputmode="numeric" placeholder="MM/YY" maxlength="5">
+                            </label>
+                            <label>
+                                <span>CVV</span>
+                                <input id="creditCardCvv" type="password" inputmode="numeric" placeholder="•••" maxlength="4">
+                            </label>
+                            <label class="full-span">
+                                <span>Name on Credit Card</span>
+                                <input id="creditCardHolder" type="text" placeholder="Cardholder's Full Name">
+                            </label>
+                            <div class="full-span">
+                                <span class="field-error" id="creditCardError" role="alert" aria-live="polite"></span>
+                            </div>
+                            <div class="full-span">
+                                <button type="button" class="cart-checkout-btn direct-pay-btn" id="payCreditCardBtn">
+                                    <span>Proceed to Bank 3DS OTP</span>
+                                    <span class="btn-arrow" aria-hidden="true">➔</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -2743,15 +2800,97 @@
                     <button type="button" class="btn-step-back" id="backToStep1Btn">
                         ← Back to Details
                     </button>
-                    <button type="button" class="cart-checkout-btn direct-pay-btn" id="placeOrderBtn">
-                        <span class="btn-spinner" id="btnSpinner" aria-hidden="true"></span>
-                        <span id="placeOrderBtnText">Verify UTR & Place Order</span>
-                    </button>
                 </div>
-                <p class="checkout-secure-note">🔒 Bank-grade 256-bit SSL encryption • Verified order placement</p>
+                <p class="checkout-secure-note">🔒 Bank-grade 256-bit SSL encryption • Verified real-time payment</p>
             </div>
         </div>
     </section>
+
+    <!-- =====================================================
+         PAYMENT GATEWAY REAL-TIME VERIFICATION MODAL
+         ===================================================== -->
+    <div class="gateway-verify-backdrop" id="gatewayVerifyModal" aria-hidden="true">
+        <div class="gateway-verify-dialog" role="dialog" aria-modal="true" aria-labelledby="gatewayDialogTitle">
+            <div class="gateway-dialog-header">
+                <div class="gateway-brand-block">
+                    <span class="gateway-shield-icon">🛡️</span>
+                    <div>
+                        <h3 id="gatewayDialogTitle">Felicita Treats Payment Gateway</h3>
+                        <p class="gateway-subtitle">Bank Settlement & Real-Time Verification</p>
+                    </div>
+                </div>
+                <button type="button" class="gateway-close-x" id="gatewayCancelXBtn" aria-label="Cancel Payment">×</button>
+            </div>
+
+            <div class="gateway-dialog-body">
+                <div class="gateway-summary-box">
+                    <div class="gateway-row">
+                        <span>Merchant:</span>
+                        <strong>Felicita Treats Visakhapatnam</strong>
+                    </div>
+                    <div class="gateway-row">
+                        <span>Payable Amount:</span>
+                        <strong class="gateway-amount" id="gatewayPayableAmount">₹0</strong>
+                    </div>
+                    <div class="gateway-row">
+                        <span>Selected App:</span>
+                        <strong id="gatewayAppTitle">Google Pay</strong>
+                    </div>
+                    <div class="gateway-row">
+                        <span>Official UPI ID:</span>
+                        <strong>9059499756@axl</strong>
+                    </div>
+                </div>
+
+                <!-- Live Status Radar -->
+                <div class="gateway-status-radar">
+                    <div class="radar-pulse"></div>
+                    <div class="radar-status-text" id="gatewayStatusHeadline">
+                        Redirecting to UPI Application...
+                    </div>
+                    <p class="radar-sub-text" id="gatewayStatusSub">
+                        Please approve the payment of <strong id="gatewayPromptAmount">₹0</strong> in your UPI app.
+                    </p>
+                    <div class="gateway-countdown">
+                        Gateway session expires in: <strong id="gatewayTimerCount">04:59</strong>
+                    </div>
+                </div>
+
+                <!-- Step-by-Step Gateway Verification -->
+                <div class="gateway-verify-form" id="gatewayVerifySection">
+                    <label for="gatewayUtrInput" class="gateway-input-label">
+                        <span>Enter 12-Digit Bank Reference / UTR Number to Verify:</span>
+                    </label>
+                    <div class="gateway-input-wrap">
+                        <input
+                            id="gatewayUtrInput"
+                            type="text"
+                            inputmode="numeric"
+                            maxlength="12"
+                            placeholder="e.g. 420198421039"
+                            autocomplete="off"
+                        >
+                        <span class="gateway-utr-count" id="gatewayUtrCount">0 / 12</span>
+                    </div>
+                    <p class="gateway-help-note">
+                        💡 Found in your GPay / PhonePe / Paytm payment receipt under <em>"UPI Transaction ID"</em> or <em>"UTR"</em> once transfer is complete.
+                    </p>
+                    <span class="field-error" id="gatewayErrorMsg" role="alert" aria-live="polite"></span>
+
+                    <button type="button" class="gateway-confirm-btn" id="gatewayConfirmVerifyBtn">
+                        <span class="btn-spinner" id="gatewaySpinner" aria-hidden="true"></span>
+                        <span id="gatewayVerifyBtnLabel">Verify Payment & Confirm Order</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="gateway-dialog-footer">
+                <button type="button" class="gateway-cancel-btn" id="gatewayCancelPaymentBtn">
+                    ✕ Cancel Payment (No Money Deducted)
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- =====================================================
          BANK 3D-SECURE OTP MODAL (SIMULATED CARD VERIFICATION)
@@ -2856,7 +2995,7 @@
 
             <div class="receipt-status-banner" id="successStatusBanner">
                 <span class="status-dot">●</span>
-                <span id="successPaymentStatus">Payment Completed via UPI</span>
+                <span id="successPaymentStatus">Payment Verified via Gateway</span>
             </div>
 
             <div class="receipt-meta-grid">
@@ -2988,7 +3127,7 @@
 
     <!-- JAVASCRIPT -->
 
-    <script src="script.js"></script>
+    <script src="script.js?v=2.2.0"></script>
 
 </body>
 

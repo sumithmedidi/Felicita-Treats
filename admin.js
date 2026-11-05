@@ -554,12 +554,12 @@
 
                         <div class="order-card-financials">
                             <div>
-                                ${o.paymentMethod === "card" 
-                                    ? `<span class="payment-method-badge is-verified">💳 Card (3DS Authorized)</span>`
+                                ${(["card", "debit", "credit", "debit_card", "credit_card"].includes(o.paymentMethod))
+                                    ? `<span class="payment-method-badge is-verified">💳 ${escapeHtml(o.paymentDetails?.methodName || 'Card (3DS)')}</span>`
                                     : (o.paymentDetails?.status === "Verified & Paid"
-                                        ? `<span class="payment-method-badge is-verified">🟢 UPI Verified (Paid)</span>
-                                           ${o.paymentDetails?.utr ? `<small style="display:block; font-size:11px; font-weight:700; color:#047857; margin-top:2px;">UTR: ${escapeHtml(o.paymentDetails.utr)}</small>` : ""}`
-                                        : `<span class="payment-method-badge is-pending">🟡 UPI (Pending Verification)</span>
+                                        ? `<span class="payment-method-badge is-verified">🟢 ${escapeHtml(o.paymentDetails?.methodName || 'UPI Verified')}</span>
+                                           ${o.paymentDetails?.gatewayTxnId ? `<small style="display:block; font-size:10px; font-weight:700; color:#047857; margin-top:2px;">Txn: ${escapeHtml(o.paymentDetails.gatewayTxnId)}</small>` : (o.paymentDetails?.utr ? `<small style="display:block; font-size:11px; font-weight:700; color:#047857; margin-top:2px;">UTR: ${escapeHtml(o.paymentDetails.utr)}</small>` : "")}`
+                                        : `<span class="payment-method-badge is-pending">🟡 ${escapeHtml(o.paymentDetails?.methodName || 'UPI')} (Pending Verification)</span>
                                            ${o.paymentDetails?.utr ? `<small style="display:block; font-size:11px; font-weight:700; color:#b45309; margin-top:2px;">UTR: ${escapeHtml(o.paymentDetails.utr)}</small>` : ""}
                                            <button type="button" class="verify-payment-btn" data-order-id="${escapeHtml(o.orderId)}" title="Verify money credited to 9059499756@axl">✓ Mark Verified</button>`
                                       )
@@ -615,7 +615,7 @@
                     <td><small>${escapeHtml(itemsBrief)}</small></td>
                     <td><strong>${formatPrice(o.total)}</strong></td>
                     <td>
-                        ${o.paymentMethod === "card"
+                        ${(["card", "debit", "credit", "debit_card", "credit_card"].includes(o.paymentMethod))
                             ? `<span class="payment-method-badge is-verified">Card (3DS)</span>`
                             : (o.paymentDetails?.status === "Verified & Paid"
                                 ? `<span class="payment-method-badge is-verified">UPI Verified</span><br><small style="color:#047857; font-weight:700;">${escapeHtml(o.paymentDetails?.utr || '')}</small>`
