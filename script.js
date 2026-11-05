@@ -644,23 +644,68 @@ const checkoutClose = document.getElementById("checkoutClose");
 const checkoutOrder = document.getElementById("checkoutOrder");
 const checkoutSubtotal = document.getElementById("checkoutSubtotal");
 const checkoutTotal = document.getElementById("checkoutTotal");
+
+// Checkout 2-Step Stepper Elements
+const checkoutStep1 = document.getElementById("checkoutStep1");
+const checkoutStep2 = document.getElementById("checkoutStep2");
+const stepIndicator1 = document.getElementById("stepIndicator1");
+const stepIndicator2 = document.getElementById("stepIndicator2");
+const stepConnectorLine = document.getElementById("stepConnectorLine");
+const proceedToPaymentBtn = document.getElementById("proceedToPaymentBtn");
+const backToStep1Btn = document.getElementById("backToStep1Btn");
+const editDetailsBtn = document.getElementById("editDetailsBtn");
+const step1CheckoutTotal = document.getElementById("step1CheckoutTotal");
+
+// Delivery Details Form Elements
 const customerName = document.getElementById("customerName");
 const customerPhone = document.getElementById("customerPhone");
 const customerAddress = document.getElementById("customerAddress");
+const deliveryDate = document.getElementById("deliveryDate");
+const deliveryTime = document.getElementById("deliveryTime");
 const customerNotes = document.getElementById("customerNotes");
+const dateError = document.getElementById("dateError");
+
+// Step 2 Review Card Elements
+const summaryCustomerName = document.getElementById("summaryCustomerName");
+const summaryCustomerPhone = document.getElementById("summaryCustomerPhone");
+const summaryCustomerAddress = document.getElementById("summaryCustomerAddress");
+const summaryCustomerSlot = document.getElementById("summaryCustomerSlot");
+
+// Payment Elements
 const placeOrderBtn = document.getElementById("placeOrderBtn");
 const placeOrderBtnText = document.getElementById("placeOrderBtnText");
-
 const paymentCards = document.querySelectorAll(".payment-card");
 const upiPaymentView = document.getElementById("upiPaymentView");
 const cardPaymentView = document.getElementById("cardPaymentView");
 const copyUpiBtn = document.getElementById("copyUpiBtn");
 const upiIntentBtn = document.getElementById("upiIntentBtn");
 const customerUtr = document.getElementById("customerUtr");
+const utrCountPill = document.getElementById("utrCountPill");
+const utrValidCheck = document.getElementById("utrValidCheck");
+const utrError = document.getElementById("utrError");
 const cardNumber = document.getElementById("cardNumber");
 const cardExpiry = document.getElementById("cardExpiry");
 const cardCvv = document.getElementById("cardCvv");
 const cardHolder = document.getElementById("cardHolder");
+
+// Bank 3D-Secure Modal Elements
+const bankOtpBackdrop = document.getElementById("bankOtpBackdrop");
+const bankOtpDialog = document.getElementById("bankOtpDialog");
+const bankCloseBtn = document.getElementById("bankCloseBtn");
+const bankOtpCancelBtn = document.getElementById("bankOtpCancelBtn");
+const bankAuthAmount = document.getElementById("bankAuthAmount");
+const bankAuthCardNumber = document.getElementById("bankAuthCardNumber");
+const bankOtpInput = document.getElementById("bankOtpInput");
+const bankOtpError = document.getElementById("bankOtpError");
+const bankTimerCount = document.getElementById("bankTimerCount");
+const bankResendBtn = document.getElementById("bankResendBtn");
+const bankOtpSubmitBtn = document.getElementById("bankOtpSubmitBtn");
+const bankAuthSpinner = document.getElementById("bankAuthSpinner");
+const bankSubmitBtnLabel = document.getElementById("bankSubmitBtnLabel");
+
+let currentCheckoutStep = 1;
+let bankTimerInterval = null;
+let pendingOrderPayload = null;
 
 const orderSuccessPanel = document.getElementById("orderSuccessPanel");
 const orderSuccessBackdrop = document.getElementById("orderSuccessBackdrop");
@@ -992,6 +1037,124 @@ customerAddress?.addEventListener("blur", () => {
 const OFFICIAL_UPI_ID = "9059499756@axl";
 const OFFICIAL_UPI_NAME = "Felicita Treats";
 
+// Initialize delivery date min constraint (Today or later)
+function initDeliveryDate() {
+    if (deliveryDate) {
+        const todayStr = new Date().toISOString().split("T")[0];
+        deliveryDate.min = todayStr;
+        if (!deliveryDate.value) {
+            deliveryDate.value = todayStr;
+        }
+    }
+}
+initDeliveryDate();
+
+function formatDateDisplay(yyyyMmDd) {
+    try {
+        const parts = yyyyMmDd.split("-");
+        if (parts.length === 3) {
+            const d = new Date(parts[0], parts[1] - 1, parts[2]);
+            return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+        }
+    } catch {}
+    return yyyyMmDd;
+}
+
+// 2-Step Checkout Stepper Logic
+function validateStep1() {
+    const name = customerName?.value.trim() || "";
+    const phone = customerPhone?.value.replace(/\D/g, "") || "";
+    const address = customerAddress?.value.trim() || "";
+    const date = deliveryDate?.value || "";
+
+    let hasError = false;
+
+    if (!name || name.length < 2) {
+        setFieldError(customerName, nameError, "Please enter your full name (at least 2 characters)");
+        if (!hasError) customerName?.focus();
+        hasError = true;
+    } else {
+        setFieldError(customerName, nameError, "");
+    }
+
+    if (!phone || phone.length !== 10) {
+        setFieldError(customerPhone, phoneError, "Please enter a valid 10-digit mobile number");
+        if (!hasError) customerPhone?.focus();
+        hasError = true;
+    } else {
+        setFieldError(customerPhone, phoneError, "");
+    }
+
+    if (!address || address.length < 8) {
+        setFieldError(customerAddress, addressError, "Please enter your delivery address with landmark in Vizag");
+        if (!hasError) customerAddress?.focus();
+        hasError = true;
+    } else {
+        setFieldError(customerAddress, addressError, "");
+    }
+
+    if (!date) {
+        if (dateError) {
+            dateError.textContent = "Please select a preferred delivery date";
+            dateError.classList.add("visible");
+        }
+        if (!hasError) deliveryDate?.focus();
+        hasError = true;
+    } else {
+        if (dateError) {
+            dateError.textContent = "";
+            dateError.classList.remove("visible");
+        }
+    }
+
+    if (hasError) {
+        showToast("Please complete required delivery details");
+        return false;
+    }
+    return true;
+}
+
+function goToStep(step) {
+    if (step === 2) {
+        if (!validateStep1()) return;
+
+        const name = customerName?.value.trim() || "";
+        const phone = customerPhone?.value.replace(/\D/g, "") || "";
+        const address = customerAddress?.value.trim() || "";
+        const date = deliveryDate?.value || "";
+        const time = deliveryTime?.value || "Evening (05:00 PM – 08:30 PM)";
+
+        if (summaryCustomerName) summaryCustomerName.textContent = name;
+        if (summaryCustomerPhone) summaryCustomerPhone.textContent = `📞 +91 ${phone}`;
+        if (summaryCustomerAddress) summaryCustomerAddress.textContent = `📍 ${address}, Visakhapatnam`;
+        if (summaryCustomerSlot) summaryCustomerSlot.textContent = `📅 ${date ? formatDateDisplay(date) : "Today"} • ${time}`;
+
+        currentCheckoutStep = 2;
+        checkoutStep1?.classList.add("is-hidden");
+        checkoutStep2?.classList.remove("is-hidden");
+        stepIndicator1?.classList.remove("is-active");
+        stepIndicator1?.classList.add("is-completed");
+        stepIndicator2?.classList.add("is-active");
+        stepConnectorLine?.classList.add("is-active");
+        updatePaymentUI();
+    } else {
+        currentCheckoutStep = 1;
+        checkoutStep2?.classList.add("is-hidden");
+        checkoutStep1?.classList.remove("is-hidden");
+        stepIndicator2?.classList.remove("is-active");
+        stepIndicator1?.classList.remove("is-completed");
+        stepIndicator1?.classList.add("is-active");
+        stepConnectorLine?.classList.remove("is-active");
+    }
+
+    const scrollArea = document.querySelector(".checkout-scroll-area");
+    if (scrollArea) scrollArea.scrollTop = 0;
+}
+
+proceedToPaymentBtn?.addEventListener("click", () => goToStep(2));
+backToStep1Btn?.addEventListener("click", () => goToStep(1));
+editDetailsBtn?.addEventListener("click", () => goToStep(1));
+
 function updatePaymentUI() {
     paymentCards.forEach(card => {
         const method = card.dataset.method;
@@ -1007,9 +1170,9 @@ function updatePaymentUI() {
     const total = totalCartValue();
     if (placeOrderBtnText && !isSubmitting) {
         if (selectedPaymentMethod === "upi") {
-            placeOrderBtnText.textContent = `Pay ${formatPrice(total)} via UPI & Place Order`;
+            placeOrderBtnText.textContent = `Verify UTR & Place Order (${formatPrice(total)})`;
         } else {
-            placeOrderBtnText.textContent = `Pay ${formatPrice(total)} Securely`;
+            placeOrderBtnText.textContent = `Proceed to Bank 3DS OTP (${formatPrice(total)})`;
         }
     }
 
@@ -1039,12 +1202,41 @@ copyUpiBtn?.addEventListener("click", async () => {
         await navigator.clipboard.writeText(vpa);
         const origText = copyUpiBtn.textContent;
         copyUpiBtn.textContent = "Copied! ✓";
-        showToast("UPI ID (9059499756@axl) copied to clipboard");
+        showToast("Bakery UPI ID (9059499756@axl) copied to clipboard");
         setTimeout(() => {
             copyUpiBtn.textContent = origText;
         }, 2000);
     } catch {
-        showToast("UPI ID: " + vpa);
+        showToast("Bakery UPI ID: " + vpa);
+    }
+});
+
+// Real-time UTR Validation & Counter
+customerUtr?.addEventListener("input", e => {
+    let val = e.target.value.replace(/\D/g, "").slice(0, 12);
+    e.target.value = val;
+
+    if (utrCountPill) {
+        utrCountPill.textContent = `${val.length} / 12 digits`;
+        utrCountPill.classList.toggle("is-valid", val.length === 12);
+    }
+    if (customerUtr) {
+        customerUtr.classList.toggle("is-valid", val.length === 12);
+    }
+    if (utrValidCheck) {
+        utrValidCheck.classList.toggle("is-visible", val.length === 12);
+    }
+    if (val.length === 12 && utrError) {
+        utrError.textContent = "";
+        utrError.classList.remove("visible");
+    }
+});
+
+customerUtr?.addEventListener("blur", () => {
+    const val = customerUtr.value.trim();
+    if (val && val.length !== 12 && utrError) {
+        utrError.textContent = "UPI UTR must be exactly 12 numeric digits";
+        utrError.classList.add("visible");
     }
 });
 
@@ -1071,6 +1263,99 @@ cardCvv?.addEventListener("input", e => {
     e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
 });
 
+// 3D-Secure Bank OTP Modal Handlers
+function openBankOtpModal(orderPayload, cardLast4) {
+    pendingOrderPayload = orderPayload;
+    if (bankAuthAmount) bankAuthAmount.textContent = formatPrice(orderPayload.total);
+    if (bankAuthCardNumber) bankAuthCardNumber.textContent = `•••• •••• •••• ${cardLast4}`;
+    if (bankOtpInput) bankOtpInput.value = "";
+    if (bankOtpError) {
+        bankOtpError.textContent = "";
+        bankOtpError.classList.remove("visible");
+    }
+
+    let timeLeft = 45;
+    if (bankTimerCount) bankTimerCount.textContent = `00:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
+    if (bankResendBtn) bankResendBtn.disabled = true;
+
+    clearInterval(bankTimerInterval);
+    bankTimerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(bankTimerInterval);
+            if (bankTimerCount) bankTimerCount.textContent = "00:00";
+            if (bankResendBtn) bankResendBtn.disabled = false;
+        } else {
+            if (bankTimerCount) bankTimerCount.textContent = `00:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
+        }
+    }, 1000);
+
+    bankOtpBackdrop?.classList.add("open");
+    bankOtpBackdrop?.setAttribute("aria-hidden", "false");
+    setTimeout(() => bankOtpInput?.focus(), 300);
+}
+
+function closeBankOtpModal() {
+    clearInterval(bankTimerInterval);
+    bankOtpBackdrop?.classList.remove("open");
+    bankOtpBackdrop?.setAttribute("aria-hidden", "true");
+    pendingOrderPayload = null;
+}
+
+bankCloseBtn?.addEventListener("click", closeBankOtpModal);
+bankOtpCancelBtn?.addEventListener("click", closeBankOtpModal);
+
+bankResendBtn?.addEventListener("click", () => {
+    showToast("New OTP sent to mobile ending in •••• 8421 (Demo: 123456)");
+    let timeLeft = 45;
+    if (bankResendBtn) bankResendBtn.disabled = true;
+    clearInterval(bankTimerInterval);
+    bankTimerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(bankTimerInterval);
+            if (bankTimerCount) bankTimerCount.textContent = "00:00";
+            if (bankResendBtn) bankResendBtn.disabled = false;
+        } else {
+            if (bankTimerCount) bankTimerCount.textContent = `00:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
+        }
+    }, 1000);
+});
+
+bankOtpSubmitBtn?.addEventListener("click", () => {
+    const otp = bankOtpInput?.value.replace(/\D/g, "") || "";
+    if (otp.length !== 6) {
+        if (bankOtpError) {
+            bankOtpError.textContent = "Please enter the 6-digit bank OTP (e.g. 123456)";
+            bankOtpError.classList.add("visible");
+        }
+        bankOtpInput?.focus();
+        return;
+    }
+
+    if (bankOtpError) {
+        bankOtpError.textContent = "";
+        bankOtpError.classList.remove("visible");
+    }
+
+    bankOtpSubmitBtn.disabled = true;
+    bankAuthSpinner?.classList.add("is-spinning");
+    if (bankSubmitBtnLabel) bankSubmitBtnLabel.textContent = "Authorizing with Issuing Bank...";
+
+    setTimeout(async () => {
+        bankOtpSubmitBtn.disabled = false;
+        bankAuthSpinner?.classList.remove("is-spinning");
+        if (bankSubmitBtnLabel) bankSubmitBtnLabel.textContent = "Authorize & Pay";
+
+        const order = pendingOrderPayload;
+        closeBankOtpModal();
+
+        if (order) {
+            await finalizeOrderSubmission(order);
+        }
+    }, 1200);
+});
+
 function openCheckout() {
     if (!cart.length) {
         showToast("Your cart is empty");
@@ -1088,8 +1373,10 @@ function openCheckout() {
     const total = totalCartValue();
     if (checkoutSubtotal) checkoutSubtotal.textContent = formatPrice(total);
     if (checkoutTotal) checkoutTotal.textContent = formatPrice(total);
+    if (step1CheckoutTotal) step1CheckoutTotal.textContent = formatPrice(total);
 
-    updatePaymentUI();
+    initDeliveryDate();
+    goToStep(1);
 
     checkoutPanel.classList.add("open");
     checkoutBackdrop.classList.add("open");
@@ -1306,8 +1593,14 @@ function openOrderSuccess(orderRecord) {
     successOrderId.textContent = orderRecord.orderId;
     if (successGreeting) successGreeting.textContent = `Thank you, ${orderRecord.name}!`;
     if (successCustomerName) successCustomerName.textContent = orderRecord.name;
-    if (successCustomerPhone) successCustomerPhone.textContent = orderRecord.phone;
+    if (successCustomerPhone) successCustomerPhone.textContent = `+91 ${orderRecord.phone}`;
     if (successDeliveryAddress) successDeliveryAddress.textContent = `${orderRecord.address}, Visakhapatnam`;
+    const successDeliverySchedule = document.getElementById("successDeliverySchedule");
+    if (successDeliverySchedule) {
+        const dateStr = orderRecord.deliveryDate ? formatDateDisplay(orderRecord.deliveryDate) : "Today";
+        const slotStr = orderRecord.deliveryTime || "Evening Slot";
+        successDeliverySchedule.textContent = `${dateStr} • ${slotStr}`;
+    }
     if (successOrderDate) {
         successOrderDate.textContent = new Date().toLocaleDateString("en-IN", {
             day: "numeric",
@@ -1318,14 +1611,20 @@ function openOrderSuccess(orderRecord) {
         });
     }
 
+    const banner = document.getElementById("successStatusBanner");
     if (successPaymentStatus) {
         if (orderRecord.paymentMethod === "card") {
-            successPaymentStatus.textContent = `Payment Completed via Card (${formatPrice(orderRecord.total)})`;
+            if (banner) {
+                banner.className = "receipt-status-banner is-verified";
+            }
+            successPaymentStatus.textContent = `● 3D-Secure Authorized & Paid (${formatPrice(orderRecord.total)})`;
         } else {
-            successPaymentStatus.textContent = `Payment Completed via UPI (${formatPrice(orderRecord.total)})`;
+            if (banner) {
+                banner.className = "receipt-status-banner is-pending";
+            }
+            const utr = orderRecord.paymentDetails?.utr || "—";
+            successPaymentStatus.textContent = `● Payment Verification Pending (UTR: ${utr})`;
         }
-        document.getElementById("successStatusBanner")?.style.removeProperty("background");
-        document.getElementById("successStatusBanner")?.style.removeProperty("color");
     }
 
     if (successItemsTable) {
@@ -1365,85 +1664,93 @@ function closeOrderSuccess() {
     }
 }
 
-function buildOrderMessage(orderId, name, phone, address, paymentMethod) {
-    const paymentLabel = paymentMethod === "card" ? "Paid via Card" : "Paid via UPI";
-    return [
-        "🍰 FELICITA TREATS",
-        "━━━━━━━━━━━━━━━━━━",
-        "🆕 NEW ORDER",
-        `Order ID: ${orderId}`,
+async function finalizeOrderSubmission(orderRecord) {
+    const isUpi = orderRecord.paymentMethod === "upi";
+    const paymentStatusBadge = isUpi 
+        ? `🟡 AWAITING UTR VERIFICATION\n🔢 UTR Reference: ${orderRecord.paymentDetails?.utr || 'N/A'}\n👉 Please verify ₹${orderRecord.total} credit to 9059499756@axl` 
+        : `🟢 3D-SECURE AUTHORIZED & PAID\n💳 Card: ${orderRecord.paymentDetails?.cardEnding || 'Verified'}`;
+
+    latestOrderText = [
+        "🍰 FELICITA TREATS — VISAKHAPATNAM",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        `🆕 NEW ORDER #${orderRecord.orderId}`,
         "",
-        "👤 CUSTOMER",
-        `Name: ${name}`,
-        `Phone: ${phone}`,
-        `Address: ${address}, Visakhapatnam`,
-        `Payment: ${paymentLabel}`,
+        "💰 PAYMENT VERIFICATION:",
+        paymentStatusBadge,
         "",
-        "🛒 ITEMS",
-        ...cart.map(item => `${item.quantity} × ${item.name} (${item.variant}) — ${formatPrice(item.price * item.quantity)}`),
+        "👤 CUSTOMER DETAILS:",
+        `Name: ${orderRecord.name}`,
+        `Phone: +91 ${orderRecord.phone}`,
+        `Address: ${orderRecord.address}, Visakhapatnam`,
+        `📅 Delivery: ${orderRecord.deliveryDate || 'Today'} (${orderRecord.deliveryTime || 'Evening Slot'})`,
+        orderRecord.notes ? `📝 Baker Note: ${orderRecord.notes}` : "",
         "",
-        `💰 TOTAL: ${formatPrice(totalCartValue())}`,
+        "🛒 ORDERED ITEMS:",
+        ...orderRecord.items.map(item => `• ${item.quantity} × ${item.name} (${item.variant}) — ${formatPrice(item.price * item.quantity)}`),
         "",
-        "🌐 Ordered via Felicita Treats website"
-    ].join("\n");
+        `💵 TOTAL AMOUNT: ${formatPrice(orderRecord.total)}`,
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        "🌐 Placed via Felicita Treats Official Portal"
+    ].filter(Boolean).join("\n");
+
+    orderRecord.message = latestOrderText;
+
+    // Save to localStorage
+    localStorage.setItem("felicitaLastOrder", JSON.stringify(orderRecord));
+
+    try {
+        const allOrders = JSON.parse(localStorage.getItem("felicita_all_orders") || "[]");
+        allOrders.unshift(orderRecord);
+        localStorage.setItem("felicita_all_orders", JSON.stringify(allOrders));
+
+        if (window.BroadcastChannel) {
+            const bc = new BroadcastChannel("felicita_orders");
+            bc.postMessage({ type: "NEW_ORDER", order: orderRecord });
+            bc.close();
+        }
+    } catch (storageErr) {
+        console.warn("Storage sync error:", storageErr);
+    }
+
+    try {
+        await fetch("/api/order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(orderRecord)
+        });
+    } catch (apiErr) {
+        console.warn("API offline fallback:", apiErr);
+    }
+
+    // Direct WhatsApp alert to Bakery Owner (+91 9515372424)
+    const ownerPhone = localStorage.getItem("felicita_owner_phone") || "919515372424";
+    const waUrl = `https://api.whatsapp.com/send?phone=${ownerPhone}&text=${encodeURIComponent(latestOrderText)}`;
+    try {
+        window.open(waUrl, "_blank");
+    } catch (waErr) {
+        console.log("Browser blocked popup, manual button available on screen", waErr);
+    }
+
+    // Clear cart
+    cart = [];
+    saveCart();
+    updateCartBadge();
+    renderCart();
+
+    closeCheckout();
+    openOrderSuccess(orderRecord);
+
+    const toastMsg = isUpi 
+        ? `Order #${orderRecord.orderId} submitted! We are verifying your UTR.` 
+        : `Order #${orderRecord.orderId} paid and confirmed! 🎉`;
+    showToast(toastMsg);
 }
 
 placeOrderBtn.addEventListener("click", async () => {
     if (isSubmitting) return;
 
-    const name = customerName?.value.trim() || "";
-    const phone = customerPhone?.value.replace(/\D/g, "") || "";
-    const address = customerAddress?.value.trim() || "";
-    const notes = customerNotes?.value.trim() || "";
-
-    let hasError = false;
-
-    if (!name || name.length < 2) {
-        setFieldError(customerName, nameError, "Please enter your full name (at least 2 characters)");
-        if (!hasError) customerName?.focus();
-        hasError = true;
-    } else {
-        setFieldError(customerName, nameError, "");
-    }
-
-    if (!phone || phone.length !== 10) {
-        setFieldError(customerPhone, phoneError, "Please enter a valid 10-digit mobile number");
-        if (!hasError) customerPhone?.focus();
-        hasError = true;
-    } else {
-        setFieldError(customerPhone, phoneError, "");
-    }
-
-    if (!address || address.length < 6) {
-        setFieldError(customerAddress, addressError, "Please enter your delivery address with landmark in Vizag");
-        if (!hasError) customerAddress?.focus();
-        hasError = true;
-    } else {
-        setFieldError(customerAddress, addressError, "");
-    }
-
-    if (selectedPaymentMethod === "card") {
-        const rawCard = cardNumber?.value.replace(/\s/g, "") || "";
-        const expiry = cardExpiry?.value.trim() || "";
-        const cvv = cardCvv?.value.trim() || "";
-
-        if (rawCard.length < 15 || expiry.length < 4 || cvv.length < 3) {
-            if (cardError) {
-                cardError.textContent = "Please fill in valid card details (number, MM/YY and CVV)";
-                cardError.classList.add("visible");
-            }
-            if (!hasError) cardNumber?.focus();
-            hasError = true;
-        } else {
-            if (cardError) {
-                cardError.textContent = "";
-                cardError.classList.remove("visible");
-            }
-        }
-    }
-
-    if (hasError) {
-        showToast("Please fill in required fields highlighted in red");
+    if (currentCheckoutStep !== 2) {
+        goToStep(2);
         return;
     }
 
@@ -1453,89 +1760,110 @@ placeOrderBtn.addEventListener("click", async () => {
         return;
     }
 
-    // Set submitting loading state
-    isSubmitting = true;
-    placeOrderBtn.disabled = true;
-    btnSpinner?.classList.add("is-spinning");
-    if (placeOrderBtnText) placeOrderBtnText.textContent = "Processing Order...";
+    const name = customerName?.value.trim() || "";
+    const phone = customerPhone?.value.replace(/\D/g, "") || "";
+    const address = customerAddress?.value.trim() || "";
+    const notes = customerNotes?.value.trim() || "";
+    const date = deliveryDate?.value || "";
+    const time = deliveryTime?.value || "Evening (05:00 PM – 08:30 PM)";
+    const total = totalCartValue();
+    const orderId = `FT-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    try {
-        const orderId = `FT-${Math.floor(100000 + Math.random() * 900000)}`;
-        const total = totalCartValue();
-        latestOrderText = buildOrderMessage(orderId, name, phone, address, selectedPaymentMethod);
+    if (selectedPaymentMethod === "upi") {
+        const utrVal = customerUtr?.value.replace(/\D/g, "") || "";
+        if (utrVal.length !== 12) {
+            if (utrError) {
+                utrError.textContent = "Please enter the mandatory 12-digit UPI UTR number from your payment receipt";
+                utrError.classList.add("visible");
+            }
+            customerUtr?.focus();
+            showToast("Enter 12-digit UTR to verify payment");
+            return;
+        }
+
+        if (utrError) {
+            utrError.textContent = "";
+            utrError.classList.remove("visible");
+        }
 
         const orderRecord = {
             orderId,
             name,
             phone,
             address,
+            deliveryDate: date,
+            deliveryTime: time,
             notes,
             status: "received",
-            paymentMethod: selectedPaymentMethod,
+            paymentMethod: "upi",
             paymentDetails: {
-                methodName: selectedPaymentMethod === "upi" ? "UPI / QR Code" : "Credit / Debit Card",
-                utr: customerUtr?.value.trim() || "",
-                status: "Paid"
+                methodName: "UPI / QR Code",
+                utr: utrVal,
+                status: "Verification Pending"
             },
             items: cart.map(item => ({ ...item })),
             total,
-            createdAt: new Date().toISOString(),
-            message: latestOrderText
+            createdAt: new Date().toISOString()
         };
 
-        // Save last customer order
-        localStorage.setItem("felicitaLastOrder", JSON.stringify(orderRecord));
+        isSubmitting = true;
+        placeOrderBtn.disabled = true;
+        btnSpinner?.classList.add("is-spinning");
+        if (placeOrderBtnText) placeOrderBtnText.textContent = "Verifying UTR...";
 
-        // Save to central orders repository for Owner Portal
         try {
-            const allOrders = JSON.parse(localStorage.getItem("felicita_all_orders") || "[]");
-            allOrders.unshift(orderRecord);
-            localStorage.setItem("felicita_all_orders", JSON.stringify(allOrders));
+            await finalizeOrderSubmission(orderRecord);
+        } finally {
+            isSubmitting = false;
+            placeOrderBtn.disabled = false;
+            btnSpinner?.classList.remove("is-spinning");
+            updatePaymentUI();
+        }
+    } else {
+        // Debit / Credit Card
+        const rawCard = cardNumber?.value.replace(/\s/g, "") || "";
+        const expiry = cardExpiry?.value.trim() || "";
+        const cvv = cardCvv?.value.trim() || "";
+        const holder = cardHolder?.value.trim() || "";
 
-            // Real-time broadcast to open Owner Portal tabs
-            if (window.BroadcastChannel) {
-                const bc = new BroadcastChannel("felicita_orders");
-                bc.postMessage({ type: "NEW_ORDER", order: orderRecord });
-                bc.close();
+        if (rawCard.length < 15 || expiry.length < 4 || cvv.length < 3 || !holder) {
+            if (cardError) {
+                cardError.textContent = "Please enter complete card details (number, MM/YY, CVV, name)";
+                cardError.classList.add("visible");
             }
-        } catch (storageErr) {
-            console.warn("Storage sync error:", storageErr);
+            cardNumber?.focus();
+            showToast("Please enter complete card details");
+            return;
         }
 
-        // Send order to API
-        try {
-            await fetch("/api/order", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(orderRecord)
-            });
-        } catch (error) {
-            console.warn("Order API unavailable:", error);
+        if (cardError) {
+            cardError.textContent = "";
+            cardError.classList.remove("visible");
         }
 
-        // WhatsApp notification directly to owner (+91 9515372424)
-        const ownerPhone = localStorage.getItem("felicita_owner_phone") || "919515372424";
-        const waUrl = `https://api.whatsapp.com/send?phone=${ownerPhone}&text=${encodeURIComponent(latestOrderText)}`;
-        try {
-            window.open(waUrl, "_blank");
-        } catch (waErr) {
-            console.log("Browser prevented auto-popup, button ready on screen", waErr);
-        }
+        const cardLast4 = rawCard.slice(-4);
+        const orderRecord = {
+            orderId,
+            name,
+            phone,
+            address,
+            deliveryDate: date,
+            deliveryTime: time,
+            notes,
+            status: "received",
+            paymentMethod: "card",
+            paymentDetails: {
+                methodName: "Debit / Credit Card (3DS)",
+                cardEnding: `•••• ${cardLast4}`,
+                cardHolder: holder,
+                status: "Authorized & Paid"
+            },
+            items: cart.map(item => ({ ...item })),
+            total,
+            createdAt: new Date().toISOString()
+        };
 
-        // Clear cart
-        cart = [];
-        saveCart();
-        updateCartBadge();
-        renderCart();
-
-        closeCheckout();
-        openOrderSuccess(orderRecord);
-        showToast(`Order ${orderId} placed & WhatsApp notification sent! 🎉`);
-    } finally {
-        isSubmitting = false;
-        placeOrderBtn.disabled = false;
-        btnSpinner?.classList.remove("is-spinning");
-        updatePaymentUI();
+        openBankOtpModal(orderRecord, cardLast4);
     }
 });
 

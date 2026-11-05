@@ -4237,6 +4237,605 @@ footer p {
 }
 
 /* =========================================================
+   CHECKOUT 2-STEP STEPPER & VERIFICATION UI
+   ========================================================= */
+
+.checkout-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 12px 0 16px;
+    padding: 8px 12px;
+    background: #fcf8f5;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+}
+
+.step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.5;
+    transition: all 0.25s ease;
+}
+
+.step-indicator.is-active {
+    opacity: 1;
+}
+
+.step-indicator.is-completed {
+    opacity: 0.9;
+}
+
+.step-num-badge {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #e8ded9;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    transition: all 0.25s ease;
+}
+
+.step-indicator.is-active .step-num-badge {
+    background: var(--rose);
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(168, 92, 97, 0.3);
+}
+
+.step-indicator.is-completed .step-num-badge {
+    background: #2e7d32;
+    color: #ffffff;
+}
+
+.step-text-wrap {
+    display: flex;
+    flex-direction: column;
+}
+
+.step-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.2;
+}
+
+.step-sub {
+    font-size: 10px;
+    color: var(--muted);
+}
+
+.step-connector-line {
+    flex: 1;
+    height: 2px;
+    background: var(--line);
+    margin: 0 4px;
+    position: relative;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.step-connector-line.is-active {
+    background: linear-gradient(90deg, var(--rose), #2e7d32);
+}
+
+.checkout-step-pane.is-hidden {
+    display: none !important;
+}
+
+.checkout-select {
+    height: 44px;
+    padding: 0 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    background: #ffffff;
+    font-size: 13px;
+    color: var(--ink);
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.checkout-select:focus {
+    border-color: var(--rose);
+}
+
+.step1-preview-breakdown {
+    margin-top: 14px;
+    background: #fffaf5;
+}
+
+.step1-delivery-badge {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #2e7d32;
+    margin-top: 6px;
+}
+
+.step-footer-actions {
+    margin-top: 14px;
+}
+
+.btn-arrow {
+    font-size: 14px;
+    transition: transform 0.2s ease;
+}
+
+.direct-pay-btn:hover .btn-arrow {
+    transform: translateX(4px);
+}
+
+/* Delivery Review Card in Step 2 */
+.delivery-review-card {
+    background: #fffaf5;
+    border: 1.5px dashed #e2cfc8;
+    border-radius: 16px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+}
+
+.review-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.review-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--rose-dark);
+    letter-spacing: 0.6px;
+}
+
+.btn-edit-details {
+    padding: 4px 10px;
+    border: none;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-edit-details:hover {
+    background: var(--pink-soft);
+    border-color: var(--rose);
+    color: var(--rose-dark);
+}
+
+.review-card-body strong {
+    display: block;
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 2px;
+}
+
+.review-card-body p {
+    margin: 2px 0;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.summary-slot-pill {
+    display: inline-block;
+    margin-top: 4px !important;
+    padding: 3px 8px;
+    background: #fdf2e9;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 11px !important;
+    color: #b45309 !important;
+}
+
+/* Mandatory UTR Input UI */
+.utr-required-block {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line);
+}
+
+.utr-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.utr-title-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ink);
+}
+
+.required-flag {
+    font-size: 9px;
+    font-weight: 800;
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+}
+
+.utr-counter-badge {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--muted);
+    background: #f3ece7;
+    padding: 2px 8px;
+    border-radius: 999px;
+    transition: all 0.2s ease;
+}
+
+.utr-counter-badge.is-valid {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.utr-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.utr-input-wrapper input {
+    width: 100%;
+    height: 46px;
+    padding: 0 40px 0 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    background: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--ink);
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.utr-input-wrapper input:focus {
+    border-color: var(--rose);
+    box-shadow: 0 0 0 3px rgba(168, 92, 97, 0.15);
+}
+
+.utr-input-wrapper input.is-valid {
+    border-color: #22c55e;
+    background: #f0fdf4;
+}
+
+.utr-check-icon {
+    position: absolute;
+    right: 14px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #22c55e;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: all 0.2s ease;
+}
+
+.utr-check-icon.is-visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.utr-help-text {
+    margin: 6px 0 0;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--muted);
+}
+
+.card-security-note {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #1e40af;
+}
+
+.checkout-footer-nav {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+}
+
+.btn-step-back {
+    flex: 0 0 auto;
+    padding: 0 18px;
+    min-height: 52px;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    background: #ffffff;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-step-back:hover {
+    border-color: var(--rose);
+    background: #faf4ed;
+}
+
+.checkout-footer-nav .direct-pay-btn {
+    flex: 1;
+}
+
+/* =========================================================
+   BANK 3D-SECURE OTP MODAL STYLES
+   ========================================================= */
+
+.bank-otp-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.bank-otp-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.bank-otp-dialog {
+    width: 100%;
+    max-width: 440px;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    transform: translateY(20px) scale(0.96);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bank-otp-backdrop.open .bank-otp-dialog {
+    transform: translateY(0) scale(1);
+}
+
+.bank-dialog-header {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.bank-brand-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bank-security-icon {
+    font-size: 24px;
+}
+
+.bank-brand-block h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+}
+
+.bank-subtitle {
+    margin: 2px 0 0;
+    font-size: 10px;
+    color: #94a3b8;
+}
+
+.bank-close-x {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s ease;
+}
+
+.bank-close-x:hover {
+    color: #ffffff;
+}
+
+.bank-dialog-body {
+    padding: 20px;
+}
+
+.bank-order-summary {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+}
+
+.bank-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.bank-summary-row strong {
+    color: #0f172a;
+}
+
+.bank-summary-row .bank-amount {
+    color: var(--rose-dark);
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.bank-auth-prompt {
+    font-size: 12px;
+    color: #334155;
+    line-height: 1.5;
+    margin-bottom: 14px;
+}
+
+.bank-otp-input-area label {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.bank-otp-input-wrap {
+    display: flex;
+    justify-content: center;
+}
+
+.bank-otp-input-wrap input {
+    width: 100%;
+    height: 50px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 8px;
+    color: #0f172a;
+    border: 2px solid #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.bank-otp-input-wrap input:focus {
+    border-color: #2563eb;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.bank-demo-badge {
+    margin: 8px 0 0;
+    font-size: 11px;
+    color: #0284c7;
+    background: #e0f2fe;
+    padding: 6px 10px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.bank-timer-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    font-size: 11px;
+    color: #64748b;
+}
+
+.bank-resend-link {
+    background: transparent;
+    border: none;
+    color: #2563eb;
+    font-weight: 700;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.bank-resend-link:disabled {
+    color: #94a3b8;
+    text-decoration: none;
+    cursor: not-allowed;
+}
+
+.bank-dialog-footer {
+    padding: 14px 20px 20px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bank-auth-submit-btn {
+    width: 100%;
+    min-height: 48px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+    transition: all 0.2s ease;
+}
+
+.bank-auth-submit-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.bank-auth-cancel-btn {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px;
+    transition: color 0.2s ease;
+}
+
+.bank-auth-cancel-btn:hover {
+    color: #0f172a;
+}
+
+.receipt-status-banner.is-pending {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.receipt-status-banner.is-verified {
+    background: #d1fae5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+/* =========================================================
    ORDER SUCCESS & RECEIPT
    ========================================================= */
 
@@ -4672,6 +5271,20 @@ footer p {
     }
 
     .product-card .add-to-cart-btn { min-height: 48px; }
+
+    .checkout-footer-nav {
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+
+    .btn-step-back {
+        width: 100%;
+        min-height: 46px;
+    }
+
+    .step-text-wrap .step-sub {
+        display: none;
+    }
 }
 
 /* =========================================================

@@ -554,8 +554,16 @@
 
                         <div class="order-card-financials">
                             <div>
-                                <span class="payment-method-badge">${o.paymentMethod === "card" ? "💳 Card (Paid)" : "📲 UPI (Paid)"}</span>
-                                ${o.paymentDetails?.utr ? `<small style="display:block; font-size:10px; color:#047857;">Ref: ${escapeHtml(o.paymentDetails.utr)}</small>` : ""}
+                                ${o.paymentMethod === "card" 
+                                    ? `<span class="payment-method-badge is-verified">💳 Card (3DS Authorized)</span>`
+                                    : (o.paymentDetails?.status === "Verified & Paid"
+                                        ? `<span class="payment-method-badge is-verified">🟢 UPI Verified (Paid)</span>
+                                           ${o.paymentDetails?.utr ? `<small style="display:block; font-size:11px; font-weight:700; color:#047857; margin-top:2px;">UTR: ${escapeHtml(o.paymentDetails.utr)}</small>` : ""}`
+                                        : `<span class="payment-method-badge is-pending">🟡 UPI (Pending Verification)</span>
+                                           ${o.paymentDetails?.utr ? `<small style="display:block; font-size:11px; font-weight:700; color:#b45309; margin-top:2px;">UTR: ${escapeHtml(o.paymentDetails.utr)}</small>` : ""}
+                                           <button type="button" class="verify-payment-btn" data-order-id="${escapeHtml(o.orderId)}" title="Verify money credited to 9059499756@axl">✓ Mark Verified</button>`
+                                      )
+                                }
                             </div>
                             <span class="order-grand-total">${formatPrice(o.total)}</span>
                         </div>
@@ -606,7 +614,15 @@
                     <td><small>${escapeHtml(o.address)}</small></td>
                     <td><small>${escapeHtml(itemsBrief)}</small></td>
                     <td><strong>${formatPrice(o.total)}</strong></td>
-                    <td><span class="payment-method-badge">${o.paymentMethod === "card" ? "Card" : "UPI"}</span></td>
+                    <td>
+                        ${o.paymentMethod === "card"
+                            ? `<span class="payment-method-badge is-verified">Card (3DS)</span>`
+                            : (o.paymentDetails?.status === "Verified & Paid"
+                                ? `<span class="payment-method-badge is-verified">UPI Verified</span><br><small style="color:#047857; font-weight:700;">${escapeHtml(o.paymentDetails?.utr || '')}</small>`
+                                : `<span class="payment-method-badge is-pending">UPI Pending</span><br><small style="color:#b45309; font-weight:700;">${escapeHtml(o.paymentDetails?.utr || '')}</small><br><button type="button" class="verify-payment-btn" data-order-id="${escapeHtml(o.orderId)}" style="margin-top:3px; padding:2px 6px; font-size:10px;">✓ Verify</button>`
+                              )
+                        }
+                    </td>
                     <td>
                         <select class="order-status-select status-${status}" data-order-id="${escapeHtml(o.orderId)}">
                             <option value="received" ${status === "received" ? "selected" : ""}>🟡 Received</option>
@@ -724,7 +740,35 @@
         });
     }
 
+    async function verifyPayment(orderId) {
+        const ord = orders.find(o => o.orderId === orderId);
+        if (!ord) return;
+
+        if (!ord.paymentDetails) ord.paymentDetails = {};
+        ord.paymentDetails.status = "Verified & Paid";
+        saveLocalOrders(orders);
+        renderDashboard();
+        alert(`Payment for Order #${orderId} marked as Verified!`);
+
+        try {
+            await fetch("/api/orders", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ orderId, paymentStatus: "Verified & Paid" })
+            });
+        } catch (e) {
+            console.warn("Could not sync verification to server", e);
+        }
+    }
+
     function attachCardActionListeners() {
+        // Verify payment
+        document.querySelectorAll(".verify-payment-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                verifyPayment(btn.dataset.orderId);
+            });
+        });
+
         // Status change
         document.querySelectorAll(".order-status-select").forEach(sel => {
             sel.addEventListener("change", (e) => {

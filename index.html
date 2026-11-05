@@ -2479,168 +2479,351 @@
         <p class="cart-eyebrow">SECURE CHECKOUT</p>
         <h2>Complete Order</h2>
 
-        <div class="checkout-scroll-area">
-            <!-- Order Items Summary -->
-            <div class="checkout-section-header">
-                <span>Items in your cart</span>
-            </div>
-            <div class="checkout-order" id="checkoutOrder"></div>
-
-            <!-- Customer & Delivery Form -->
-            <div class="checkout-section-header">
-                <span>Delivery Details (Visakhapatnam)</span>
-            </div>
-            <div class="customer-form" novalidate>
-                <div class="form-grid-2">
-                    <label>
-                        <span>Full Name *</span>
-                        <input id="customerName" type="text" autocomplete="name" placeholder="Enter your full name" required aria-required="true" aria-describedby="nameError">
-                        <span class="field-error" id="nameError" role="alert" aria-live="polite"></span>
-                    </label>
-                    <label>
-                        <span>Phone Number *</span>
-                        <input id="customerPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number" required aria-required="true" aria-describedby="phoneError">
-                        <span class="field-error" id="phoneError" role="alert" aria-live="polite"></span>
-                    </label>
-                </div>
-                <label>
-                    <span>Delivery Address / Landmark (Vizag) *</span>
-                    <input id="customerAddress" type="text" autocomplete="street-address" placeholder="Flat / House no, Street, Landmark, Area in Vizag" required aria-required="true" aria-describedby="addressError">
-                    <span class="field-error" id="addressError" role="alert" aria-live="polite"></span>
-                </label>
-                <label>
-                    <span>Baker Notes & Cake Message (Optional)</span>
-                    <input id="customerNotes" type="text" placeholder="e.g. Write 'Happy Birthday' on cake, eggless request">
-                </label>
-            </div>
-
-            <!-- Direct Online Payment Methods -->
-            <div class="checkout-section-header">
-                <span>Select Online Payment Method</span>
-            </div>
-            <div class="payment-methods" id="paymentMethods" role="radiogroup" aria-label="Payment Method">
-                <!-- UPI Option -->
-                <label class="payment-card is-selected" data-method="upi">
-                    <input type="radio" name="paymentOption" value="upi" checked>
-                    <div class="payment-card-body">
-                        <div class="payment-card-top">
-                            <span class="pay-method-pill">⚡ Instant</span>
-                            <strong>UPI / QR Code</strong>
-                        </div>
-                        <p>Google Pay, PhonePe, Paytm, BHIM, CRED</p>
-                    </div>
-                    <div class="payment-radio-mark" aria-hidden="true">✓</div>
-                </label>
-
-                <!-- Card Option -->
-                <label class="payment-card" data-method="card">
-                    <input type="radio" name="paymentOption" value="card">
-                    <div class="payment-card-body">
-                        <div class="payment-card-top">
-                            <span class="pay-method-pill">Cards</span>
-                            <strong>Debit / Credit Card</strong>
-                        </div>
-                        <p>Visa, MasterCard, RuPay cards accepted</p>
-                    </div>
-                    <div class="payment-radio-mark" aria-hidden="true">✓</div>
-                </label>
-            </div>
-
-            <!-- Dynamic Payment Views -->
-            <div class="payment-details-box" id="paymentDetailsBox">
-                <!-- UPI View -->
-                <div class="payment-view" id="upiPaymentView">
-                    <div class="upi-pay-card">
-                        <div class="upi-qr-card">
-                            <div class="upi-qr-frame">
-                                <img
-                                    id="upiQrCodeImg"
-                                    src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&amp;data=upi%3A%2F%2Fpay%3Fpa%3D9059499756%40axl%26pn%3DFelicita%2520Treats%26cu%3DINR"
-                                    width="120"
-                                    height="120"
-                                    alt="Scan to pay 9059499756@axl via UPI"
-                                    style="display: block; border-radius: 8px; object-fit: contain;"
-                                >
-                            </div>
-                            <span class="upi-qr-instruction">Scan with any UPI app to pay</span>
-                        </div>
-
-                        <div class="upi-meta">
-                            <div class="upi-id-pill">
-                                <div>
-                                    <small>Official UPI ID</small>
-                                    <strong id="upiVpaValue">9059499756@axl</strong>
-                                </div>
-                                <button type="button" class="copy-pill-btn" id="copyUpiBtn">Copy ID</button>
-                            </div>
-
-                            <a href="#" class="upi-direct-app-btn" id="upiIntentBtn" target="_blank">
-                                📱 Open in UPI App (GPay / PhonePe)
-                            </a>
-
-                            <label class="utr-input-group">
-                                <span>UPI Reference / UTR Number (Optional)</span>
-                                <input id="customerUtr" type="text" placeholder="e.g. 320148921844" maxlength="20">
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card View -->
-                <div class="payment-view is-hidden" id="cardPaymentView">
-                    <div class="card-inputs-grid">
-                        <label class="full-span">
-                            <span>Card Number</span>
-                            <input id="cardNumber" type="text" inputmode="numeric" placeholder="4111 2222 3333 4444" maxlength="19" aria-describedby="cardError">
-                        </label>
-                        <label>
-                            <span>Expiry (MM/YY)</span>
-                            <input id="cardExpiry" type="text" inputmode="numeric" placeholder="MM/YY" maxlength="5">
-                        </label>
-                        <label>
-                            <span>CVV</span>
-                            <input id="cardCvv" type="password" inputmode="numeric" placeholder="•••" maxlength="4">
-                        </label>
-                        <label class="full-span">
-                            <span>Name on Card</span>
-                            <input id="cardHolder" type="text" placeholder="Cardholder's Name">
-                        </label>
-                        <div class="full-span">
-                            <span class="field-error" id="cardError" role="alert" aria-live="polite"></span>
-                        </div>
-                    </div>
+        <!-- Checkout 2-Step Stepper Header -->
+        <div class="checkout-stepper" id="checkoutStepper" role="tablist" aria-label="Checkout Progress">
+            <div class="step-indicator is-active" id="stepIndicator1">
+                <span class="step-num-badge">1</span>
+                <div class="step-text-wrap">
+                    <span class="step-title">Delivery Details</span>
+                    <small class="step-sub">Address & Slot</small>
                 </div>
             </div>
-
-            <!-- Price Breakdown -->
-            <div class="checkout-breakdown">
-                <div class="breakdown-line">
-                    <span>Cart Subtotal</span>
-                    <strong id="checkoutSubtotal">₹0</strong>
-                </div>
-                <div class="breakdown-line">
-                    <span>Fresh Baking & Eco Box</span>
-                    <span class="badge-free">FREE</span>
-                </div>
-                <div class="breakdown-line">
-                    <span>Vizag Delivery</span>
-                    <span class="badge-free">FREE</span>
-                </div>
-                <div class="checkout-total">
-                    <span>Total Amount</span>
-                    <strong id="checkoutTotal">₹0</strong>
+            <div class="step-connector-line" id="stepConnectorLine" aria-hidden="true"></div>
+            <div class="step-indicator" id="stepIndicator2">
+                <span class="step-num-badge">2</span>
+                <div class="step-text-wrap">
+                    <span class="step-title">Payment & Proof</span>
+                    <small class="step-sub">UPI UTR / 3DS Card</small>
                 </div>
             </div>
         </div>
 
-        <div class="checkout-footer">
-            <button type="button" class="cart-checkout-btn direct-pay-btn" id="placeOrderBtn">
-                <span class="btn-spinner" id="btnSpinner" aria-hidden="true"></span>
-                <span id="placeOrderBtnText">Pay Now & Place Order</span>
-            </button>
-            <p class="checkout-secure-note">🔒 256-Bit SSL Encrypted • 100% Secure Instant Payment</p>
+        <div class="checkout-scroll-area">
+            <!-- ==============================================
+                 STEP 1: DELIVERY & SCHEDULING
+                 ============================================== -->
+            <div class="checkout-step-pane" id="checkoutStep1">
+                <!-- Order Items Summary -->
+                <div class="checkout-section-header">
+                    <span>Items in your cart</span>
+                </div>
+                <div class="checkout-order" id="checkoutOrder"></div>
+
+                <!-- Customer & Delivery Form -->
+                <div class="checkout-section-header">
+                    <span>Delivery Details (Visakhapatnam Only)</span>
+                </div>
+                <div class="customer-form" novalidate>
+                    <div class="form-grid-2">
+                        <label>
+                            <span>Full Name *</span>
+                            <input id="customerName" type="text" autocomplete="name" placeholder="Enter your full name" required aria-required="true" aria-describedby="nameError">
+                            <span class="field-error" id="nameError" role="alert" aria-live="polite"></span>
+                        </label>
+                        <label>
+                            <span>Phone Number *</span>
+                            <input id="customerPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number" maxlength="10" required aria-required="true" aria-describedby="phoneError">
+                            <span class="field-error" id="phoneError" role="alert" aria-live="polite"></span>
+                        </label>
+                    </div>
+
+                    <label>
+                        <span>Delivery Address & Landmark (Vizag) *</span>
+                        <input id="customerAddress" type="text" autocomplete="street-address" placeholder="Flat / House no, Street, Landmark, Area in Vizag" required aria-required="true" aria-describedby="addressError">
+                        <span class="field-error" id="addressError" role="alert" aria-live="polite"></span>
+                    </label>
+
+                    <div class="form-grid-2">
+                        <label>
+                            <span>Preferred Delivery Date *</span>
+                            <input id="deliveryDate" type="date" required aria-required="true" aria-describedby="dateError">
+                            <span class="field-error" id="dateError" role="alert" aria-live="polite"></span>
+                        </label>
+                        <label>
+                            <span>Preferred Delivery Slot *</span>
+                            <select id="deliveryTime" class="checkout-select" required aria-required="true">
+                                <option value="Evening (05:00 PM – 08:30 PM)">Evening (05:00 PM – 08:30 PM)</option>
+                                <option value="Afternoon (01:00 PM – 05:00 PM)">Afternoon (01:00 PM – 05:00 PM)</option>
+                                <option value="Morning (10:00 AM – 01:00 PM)">Morning (10:00 AM – 01:00 PM)</option>
+                                <option value="Express Fresh (Within 60 Mins)">Express Fresh (Within 60 Mins)</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <label>
+                        <span>Baker Notes & Cake Message (Optional)</span>
+                        <input id="customerNotes" type="text" placeholder="e.g. Write 'Happy Birthday Rhea' on cake, extra chocolate sprinkles">
+                    </label>
+                </div>
+
+                <!-- Price Preview Strip -->
+                <div class="checkout-breakdown step1-preview-breakdown">
+                    <div class="checkout-total">
+                        <span>Total Payable</span>
+                        <strong id="step1CheckoutTotal">₹0</strong>
+                    </div>
+                    <small class="step1-delivery-badge">✓ Free Artisanal Box & Free Vizag Delivery Included</small>
+                </div>
+
+                <div class="step-footer-actions">
+                    <button type="button" class="cart-checkout-btn direct-pay-btn" id="proceedToPaymentBtn">
+                        <span>Proceed to Payment</span>
+                        <span class="btn-arrow" aria-hidden="true">➔</span>
+                    </button>
+                    <p class="checkout-secure-note">🔒 Step 1 of 2 • No charge yet until payment proof is verified</p>
+                </div>
+            </div>
+
+            <!-- ==============================================
+                 STEP 2: PAYMENT & VERIFICATION
+                 ============================================== -->
+            <div class="checkout-step-pane is-hidden" id="checkoutStep2">
+                <!-- Delivery Summary Review Card -->
+                <div class="delivery-review-card">
+                    <div class="review-card-head">
+                        <span class="review-label">📍 DELIVERING TO</span>
+                        <button type="button" class="btn-edit-details" id="editDetailsBtn">✏️ Edit Details</button>
+                    </div>
+                    <div class="review-card-body">
+                        <strong id="summaryCustomerName">—</strong>
+                        <p id="summaryCustomerPhone">—</p>
+                        <p id="summaryCustomerAddress">—</p>
+                        <p class="summary-slot-pill" id="summaryCustomerSlot">📅 —</p>
+                    </div>
+                </div>
+
+                <!-- Select Payment Method -->
+                <div class="checkout-section-header">
+                    <span>Select Payment Method</span>
+                </div>
+                <div class="payment-methods" id="paymentMethods" role="radiogroup" aria-label="Payment Method">
+                    <!-- UPI Option -->
+                    <label class="payment-card is-selected" data-method="upi">
+                        <input type="radio" name="paymentOption" value="upi" checked>
+                        <div class="payment-card-body">
+                            <div class="payment-card-top">
+                                <span class="pay-method-pill">⚡ 0% Fee</span>
+                                <strong>UPI / QR Code</strong>
+                            </div>
+                            <p>GPay, PhonePe, Paytm, BHIM, CRED (UTR Verification Required)</p>
+                        </div>
+                        <div class="payment-radio-mark" aria-hidden="true">✓</div>
+                    </label>
+
+                    <!-- Card Option -->
+                    <label class="payment-card" data-method="card">
+                        <input type="radio" name="paymentOption" value="card">
+                        <div class="payment-card-body">
+                            <div class="payment-card-top">
+                                <span class="pay-method-pill">3DS Verified</span>
+                                <strong>Debit / Credit Card</strong>
+                            </div>
+                            <p>Visa, MasterCard, RuPay (Bank OTP Verification)</p>
+                        </div>
+                        <div class="payment-radio-mark" aria-hidden="true">✓</div>
+                    </label>
+                </div>
+
+                <!-- Dynamic Payment Views -->
+                <div class="payment-details-box" id="paymentDetailsBox">
+                    <!-- UPI View -->
+                    <div class="payment-view" id="upiPaymentView">
+                        <div class="upi-pay-card">
+                            <div class="upi-qr-card">
+                                <div class="upi-qr-frame">
+                                    <img
+                                        id="upiQrCodeImg"
+                                        src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&amp;data=upi%3A%2F%2Fpay%3Fpa%3D9059499756%40axl%26pn%3DFelicita%2520Treats%26cu%3DINR"
+                                        width="120"
+                                        height="120"
+                                        alt="Scan to pay 9059499756@axl via UPI"
+                                        style="display: block; border-radius: 8px; object-fit: contain;"
+                                    >
+                                </div>
+                                <span class="upi-qr-instruction">Scan with any UPI app to pay</span>
+                            </div>
+
+                            <div class="upi-meta">
+                                <div class="upi-id-pill">
+                                    <div>
+                                        <small>Official Bakery UPI ID</small>
+                                        <strong id="upiVpaValue">9059499756@axl</strong>
+                                    </div>
+                                    <button type="button" class="copy-pill-btn" id="copyUpiBtn">Copy ID</button>
+                                </div>
+
+                                <a href="#" class="upi-direct-app-btn" id="upiIntentBtn" target="_blank">
+                                    📱 Open in UPI App (GPay / PhonePe)
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- MANDATORY UPI UTR INPUT -->
+                        <div class="utr-required-block">
+                            <div class="utr-title-row">
+                                <label for="customerUtr" class="utr-title-label">
+                                    <span>UPI Reference / UTR Number *</span>
+                                    <span class="required-flag">REQUIRED</span>
+                                </label>
+                                <span class="utr-counter-badge" id="utrCountPill">0 / 12 digits</span>
+                            </div>
+                            <div class="utr-input-wrapper">
+                                <input
+                                    id="customerUtr"
+                                    type="text"
+                                    inputmode="numeric"
+                                    placeholder="Enter 12-digit UTR from GPay / PhonePe"
+                                    maxlength="12"
+                                    autocomplete="off"
+                                    required
+                                    aria-required="true"
+                                    aria-describedby="utrHelp utrError"
+                                >
+                                <span class="utr-check-icon" id="utrValidCheck" aria-hidden="true">✓</span>
+                            </div>
+                            <p class="utr-help-text" id="utrHelp">
+                                💡 <strong>How to find UTR?</strong> After paying on GPay, PhonePe or Paytm, open the payment receipt and copy the 12-digit number labeled <em>"UPI Transaction ID"</em> or <em>"UTR"</em>. Baking begins once UTR is verified by our team.
+                            </p>
+                            <span class="field-error" id="utrError" role="alert" aria-live="polite"></span>
+                        </div>
+                    </div>
+
+                    <!-- Card View -->
+                    <div class="payment-view is-hidden" id="cardPaymentView">
+                        <div class="card-inputs-grid">
+                            <label class="full-span">
+                                <span>Card Number</span>
+                                <input id="cardNumber" type="text" inputmode="numeric" placeholder="4111 2222 3333 4444" maxlength="19" aria-describedby="cardError">
+                            </label>
+                            <label>
+                                <span>Expiry (MM/YY)</span>
+                                <input id="cardExpiry" type="text" inputmode="numeric" placeholder="MM/YY" maxlength="5">
+                            </label>
+                            <label>
+                                <span>CVV</span>
+                                <input id="cardCvv" type="password" inputmode="numeric" placeholder="•••" maxlength="4">
+                            </label>
+                            <label class="full-span">
+                                <span>Name on Card</span>
+                                <input id="cardHolder" type="text" placeholder="Cardholder's Name">
+                            </label>
+                            <div class="full-span">
+                                <span class="field-error" id="cardError" role="alert" aria-live="polite"></span>
+                            </div>
+                            <div class="full-span">
+                                <div class="card-security-note">
+                                    🛡️ <strong>Bank 3D-Secure 2.0 Protection:</strong> Entering card details will open your bank's secure OTP authentication window to verify and authorize your payment.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price Breakdown -->
+                <div class="checkout-breakdown">
+                    <div class="breakdown-line">
+                        <span>Cart Subtotal</span>
+                        <strong id="checkoutSubtotal">₹0</strong>
+                    </div>
+                    <div class="breakdown-line">
+                        <span>Fresh Baking & Eco Box</span>
+                        <span class="badge-free">FREE</span>
+                    </div>
+                    <div class="breakdown-line">
+                        <span>Vizag Delivery</span>
+                        <span class="badge-free">FREE</span>
+                    </div>
+                    <div class="checkout-total">
+                        <span>Total Amount</span>
+                        <strong id="checkoutTotal">₹0</strong>
+                    </div>
+                </div>
+
+                <div class="checkout-footer-nav">
+                    <button type="button" class="btn-step-back" id="backToStep1Btn">
+                        ← Back to Details
+                    </button>
+                    <button type="button" class="cart-checkout-btn direct-pay-btn" id="placeOrderBtn">
+                        <span class="btn-spinner" id="btnSpinner" aria-hidden="true"></span>
+                        <span id="placeOrderBtnText">Verify UTR & Place Order</span>
+                    </button>
+                </div>
+                <p class="checkout-secure-note">🔒 Bank-grade 256-bit SSL encryption • Verified order placement</p>
+            </div>
         </div>
     </section>
+
+    <!-- =====================================================
+         BANK 3D-SECURE OTP MODAL (SIMULATED CARD VERIFICATION)
+         ===================================================== -->
+    <div class="bank-otp-backdrop" id="bankOtpBackdrop" aria-hidden="true">
+        <div class="bank-otp-dialog" id="bankOtpDialog" role="dialog" aria-modal="true" aria-labelledby="bankDialogTitle">
+            <div class="bank-dialog-header">
+                <div class="bank-brand-block">
+                    <span class="bank-security-icon">🛡️</span>
+                    <div>
+                        <h3 id="bankDialogTitle">Verified by Visa / RuPay Secure</h3>
+                        <p class="bank-subtitle">Issuing Bank 3D-Secure 2.0 Authentication</p>
+                    </div>
+                </div>
+                <button type="button" class="bank-close-x" id="bankCloseBtn" aria-label="Cancel Authentication">×</button>
+            </div>
+
+            <div class="bank-dialog-body">
+                <div class="bank-order-summary">
+                    <div class="bank-summary-row">
+                        <span>Merchant:</span>
+                        <strong>Felicita Treats Visakhapatnam</strong>
+                    </div>
+                    <div class="bank-summary-row">
+                        <span>Transaction Amount:</span>
+                        <strong class="bank-amount" id="bankAuthAmount">₹0</strong>
+                    </div>
+                    <div class="bank-summary-row">
+                        <span>Card:</span>
+                        <strong id="bankAuthCardNumber">•••• •••• •••• 4242</strong>
+                    </div>
+                </div>
+
+                <div class="bank-auth-prompt">
+                    <p>A 6-digit One-Time Passcode (OTP) has been sent to your bank-registered mobile number ending in <strong>•••• 8421</strong>.</p>
+                </div>
+
+                <div class="bank-otp-input-area">
+                    <label for="bankOtpInput">Enter 6-Digit Bank OTP:</label>
+                    <div class="bank-otp-input-wrap">
+                        <input
+                            id="bankOtpInput"
+                            type="text"
+                            inputmode="numeric"
+                            maxlength="6"
+                            placeholder="• • • • • •"
+                            autocomplete="one-time-code"
+                        >
+                    </div>
+                    <span class="field-error" id="bankOtpError" role="alert" aria-live="polite"></span>
+                    <p class="bank-demo-badge">
+                        💡 <em>Demo Authentication:</em> Enter <strong>123456</strong> (or any 6 digits) to authorize.
+                    </p>
+                </div>
+
+                <div class="bank-timer-wrap">
+                    <span>Resend OTP in: <strong id="bankTimerCount">00:45</strong></span>
+                    <button type="button" class="bank-resend-link" id="bankResendBtn" disabled>Resend OTP</button>
+                </div>
+            </div>
+
+            <div class="bank-dialog-footer">
+                <button type="button" class="bank-auth-submit-btn" id="bankOtpSubmitBtn">
+                    <span class="btn-spinner" id="bankAuthSpinner" aria-hidden="true"></span>
+                    <span id="bankSubmitBtnLabel">Authorize & Pay</span>
+                </button>
+                <button type="button" class="bank-auth-cancel-btn" id="bankOtpCancelBtn">
+                    Cancel Transaction
+                </button>
+            </div>
+        </div>
+    </div>
 
 
     <!-- =====================================================
@@ -2690,8 +2873,8 @@
                     <strong id="successDeliveryAddress">—</strong>
                 </div>
                 <div class="meta-item">
-                    <span>Estimated Baking & Delivery</span>
-                    <strong>45–60 Minutes</strong>
+                    <span>Preferred Delivery Schedule</span>
+                    <strong id="successDeliverySchedule">—</strong>
                 </div>
                 <div class="meta-item">
                     <span>Order Date</span>
